@@ -1,5 +1,14 @@
 from abc import ABCMeta, abstractmethod
 
+class Task:
+    def __init__(self):
+        self.pre_exec = []
+        self.executable = []
+        self.arguments = []
+        self.cpu_reqs = dict()
+        self.gpu_reqs = dict()
+        
+
 class TaskMan(metaclass=ABCMeta):
     def __init__(self, task_name, cpu_reqs, gpu_reqs):
         """

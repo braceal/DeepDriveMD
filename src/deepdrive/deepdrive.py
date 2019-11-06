@@ -1,7 +1,9 @@
 import os
-from radical.entk import Pipeline, Stage, Task, AppManager
+import Pyro4
+import threading
+from subprocess import Popen, PIPE
 
-
+@Pyro4.expose
 class DeepDriveMD:
     """
     Implements an interface for the DeepDriveMD computational 
@@ -58,15 +60,7 @@ class DeepDriveMD:
         self.current_iter = 0
         self.max_iter = max_iter
 
-        # TODO: Move outside of class? Maybe put in __init__.py
-        #       or bash setup script
-        # Set default verbosity
-        if os.environ.get('RADICAL_ENTK_VERBOSE') is None:
-            os.environ['RADICAL_ENTK_REPORT'] = 'True'
-
-        # Initialize pipeline
-        self.__pipeline = Pipeline()
-        self.__pipeline.name = pipeline_name
+        self.pipeline = pipeline_name
         self.md_stage_name = md_stage_name
         self.pre_stage_name = pre_stage_name
         self.ml_stage_name = ml_stage_name
@@ -78,92 +72,48 @@ class DeepDriveMD:
         self.ml_algs = ml_algs
         self.outlier_algs = outlier_algs
 
-        # Sets pipeline stages
-        self.pipeline()
 
-        # Create Application Manager
-        self.appman = AppManager(hostname=os.environ.get('RMQ_HOSTNAME'), 
-                                 port=int(os.environ.get('RMQ_PORT')))
-        self.appman.resource_desc = resources
+def serve(daemon):
+    """
+    Effects
+    -------
+    Starts blocking requestloop. Waits on requests from
+    process running entk pipeline.
 
-        # Assign the workflow as a list of Pipelines to the Application Manager. In
-        # this way, all the pipelines in the list will execute concurrently.
-        self.appman.workflow = [self.__pipeline]
-
-
-    def run(self):
-        """
-        Effects
-        -------
-        Runs the Application Manager. 
-        
-        """
-        self.appman.run()
+    """
+    daemon.requestLoop()
 
 
-    def generate_MD_stage(self):
-        stage = Stage()
-        stage.name = self.md_stage_name
-        for sim in self.md_sims:
-            stage.add_tasks(set(sim.tasks()))
-        return stage
+def run(dd):
+    """
+    Parameters
+    ----------
+    dd : DeepDriveMD
+        contains all metadata to run the DeepDriveMD pipeline
 
+    Effects
+    -------
+    Starts entk driver for DeepDriveMD pipeline.
+    
+    """
+    # Initialize daemon
+    daemon = Pyro4.Daemon()
+    
+    # Register DeepDriveMD object 
+    uri = daemon.register(dd)
+    
+    # Start server on this process in another thread
+    threading.Thread(target=serve, args=(daemon,)).start()
 
-    def generate_preprocess_stage(self):
-        stage = Stage()
-        stage.name = self.pre_stage_name
-        for preproc in self.preprocs:
-            stage.add_tasks(set(preproc.tasks()))
-        return stage
+    # Start new process to run entk backend. The main function
+    # retrieves the uri corresponding to the DeepDriveMD object
+    # and allows the ability to communicate between python2 and python3.
+    # TODO: write bash script to enter python2 virtual env
+    process = Popen(['python2', 
+                     '{}/entkdriver/__main__.py'.format(os.path.abspath('.')), 
+                     '--uri', str(uri)], 
+                     stdout=PIPE, stderr=PIPE)
 
-
-    def generate_ml_stage(self):
-        stage = Stage()
-        stage.name = self.ml_stage_name
-        for alg in self.ml_algs:
-            stage.add_tasks(set(alg.tasks()))
-        return stage
-
-
-    def generate_outlier_stage(self):
-        stage = Stage()
-        stage.name = self.outlier_stage_name
-        for alg in self.outlier_algs:
-            stage.add_tasks(set(alg.tasks()))
-
-        stage.post_exec = {
-            'condition': lambda: self.current_iter < self.max_iter,
-            'on_true': self.pipeline,
-            'on_false': lambda: print('Done')
-        }
-
-        return stage
-
-
-    def pipeline(self):
-        """
-        Effects
-        -------
-        Adds stages to pipeline.
-
-        """
-        if self.current_iter:
-            print('Finishing pipeline iteration {} of {}'.format(self.current_iter, 
-                                                                 self.max_iter)) 
-        # MD stage
-        s1 = self.generate_md_stage()
-        self.__pipeline.add_stages(s1)
-
-        # Preprocess stage
-        s2 = self.generate_preprocess_stage() 
-        self.__pipeline.add_stages(s2)  
-
-        # Learning stage
-        s3 = self.generate_ml_stage()
-        self.__pipeline.add_stages(s3)
-
-        # Outlier identification stage
-        s4 = self.generate_outlier_stage(settings) 
-        self.__pipeline.add_stages(s4) 
-
-        self.current_iter += 1
+    stdout, stderr = process.communicate()
+    result = stdout.decode('utf-8').split('\n')
+    print(result)
