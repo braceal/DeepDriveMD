@@ -1,19 +1,16 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='deepdrive',
+    name='entkdriver',
     version='0.1.0',
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
+	'radical.entk==0.7.16',
         'click==7.0',
-        'pyro4==4.77',
-        'pycodestyle==2.5.0',
-        'pydocstyle==4.0.1',
-        'pylint==2.3.1',
-        'pytest==5.1.2',
+        'pyro4==4.77'
     ],
     classifiers=[
-        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 2",
     ],
 )
