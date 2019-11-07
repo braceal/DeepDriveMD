@@ -27,7 +27,6 @@ python3 -m venv env
 source env/bin/activate
 pip3 install --upgrade pip setuptools wheel
 pip3 install -e .
-
 ```
 Now the python3 virtual environment is enabled.
 
