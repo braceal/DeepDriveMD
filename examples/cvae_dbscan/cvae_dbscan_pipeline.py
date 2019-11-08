@@ -1,4 +1,4 @@
-from deepdrive import DeepDriveMD
+from deepdrive import DeepDriveMD, run
 from .md import BasicMD
 from .preprocess import ContactMatrix
 from .ml import CVAE
@@ -117,4 +117,4 @@ if __name__ == '__main__':
 
 
     # Start running program on Summit.
-    cvae_dbscan_dd.run()
+    run(cvae_dbscan_dd)
