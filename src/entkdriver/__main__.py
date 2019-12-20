@@ -5,7 +5,7 @@ from .deepdrive import EntkDriver
 
 
 @click.command()
-@click.option('--uri', help='URI for server DeepDriveMD object')
+@click.option('--uri', required=True, help='URI for server DeepDriveMD object')
 def main(uri):
     try:
         ddMD = Pyro4.Proxy(uri)
