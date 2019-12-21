@@ -10,7 +10,8 @@ def validate_file(ctx, param, value):
     """
     Adds abspath tho each non-None file
     """
-    return os.abspath(value) if value else value
+    if value:
+        return os.abspath(value)
 
 def validate_len(ctx, param, value):
     """
