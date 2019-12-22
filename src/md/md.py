@@ -8,10 +8,10 @@ from MD_utils.openmm_simulation import openmm_simulate_amber_fs_pep
 
 def validate_file(ctx, param, value):
     """
-    Adds abspath tho each non-None file
+    Adds abspath to non-None file
     """
     if value:
-        return os.abspath(value)
+        return os.path.abspath(value)
 
 def validate_len(ctx, param, value):
     """
