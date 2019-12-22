@@ -2,7 +2,6 @@ import os
 import h5py
 import click
 import warnings
-import numpy as np 
 from glob import glob
 from contextlib import ExitStack
 from utils import cm_to_cvae, open_h5
