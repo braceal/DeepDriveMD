@@ -18,3 +18,13 @@ source env/bin/activate
 pip install --upgrade pip setuptools wheel
 pip install -e .
 ```
+
+This project uses openmm for molecular dynamics simulations which requires anaconda to install.
+First update your conda environment:
+```
+conda update conda
+```
+Then install openmm:
+```
+conda install -c omnia openmm-setup
+```
