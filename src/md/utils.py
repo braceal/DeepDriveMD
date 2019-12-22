@@ -4,7 +4,7 @@ import simtk.unit as u
 import simtk.openmm as omm
 import simtk.openmm.app as app
 from molecules.utils import triu_to_full
-from openmm_reporter import ContactMapReporter
+from mulecules.md import ContactMapReporter
 
 # TODO: use molecules package instead
 
