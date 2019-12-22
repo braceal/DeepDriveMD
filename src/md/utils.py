@@ -89,3 +89,22 @@ def openmm_simulate_amber_fs_pep(pdb_file, top_file=None, check_point=None, GPU_
         simulation.loadCheckpoint(check_point)
     nsteps = int(sim_time/dt)
     simulation.step(nsteps)
+
+
+def open_h5(h5_file):
+    """
+    Opens file in single write multiple reader mode
+    libver specifies newest available version,
+    may not be backwards compatable
+
+    Parameters
+    ----------
+    h5_file : str
+        name of h5 file to open
+
+    Returns
+    -------
+    open h5py file
+
+    """
+    return h5py.File(h5_file, 'r', libver='latest', swmr=True)
