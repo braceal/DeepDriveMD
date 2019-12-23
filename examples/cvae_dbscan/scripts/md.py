@@ -1,7 +1,7 @@
 import os
 import click
 import simtk.unit as u
-from MD_utils.openmm_simulation import openmm_simulate_amber_fs_pep
+from deepdrive.md import openmm_simulate_amber_fs_pep
 
 # TODO: determine  default type for report and length
 

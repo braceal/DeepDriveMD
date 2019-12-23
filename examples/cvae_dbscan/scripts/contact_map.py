@@ -4,7 +4,7 @@ import click
 import warnings
 from glob import glob
 from contextlib import ExitStack
-from utils import cm_to_cvae, open_h5
+from deepdrive.preproc import cm_to_cvae, open_h5
 
 
 def validate_sim_path(ctx, param, value):
