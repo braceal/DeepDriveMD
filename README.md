@@ -17,3 +17,13 @@ conda env create python=3.7 -p ./conda-env -f environment.yml
 conda activate ./conda-env
 conda install -p ./conda-env -c omnia openmm-setup
 ```
+
+This project uses openmm for molecular dynamics simulations which requires anaconda to install.
+First update your conda environment:
+```
+conda update conda
+```
+Then install openmm:
+```
+conda install -c omnia openmm-setup
+```
