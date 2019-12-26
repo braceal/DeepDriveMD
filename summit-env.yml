@@ -1,0 +1,23 @@
+name: null                          # Our env was made with --prefix
+channels:
+  - conda-forge                     # We added a third party channel
+  #- omnia
+  - defaults
+dependencies:
+  - pip=10.0.1=py37_0
+  - numpy
+  - scipy
+  - swig
+  - cython
+  #- openmm
+  #- opencv
+  #- gym
+  - pip:                            # Packages installed from PyPI
+    #- ParmEd==3.2.0
+    #- simtk.unit==0.2
+    #- click==7.0
+    #- pycodestyle==2.5.0
+    #- pydocstyle==4.0.1
+    #- pylint==2.3.1
+    #- pytest==5.1.2
+    #- -e .
