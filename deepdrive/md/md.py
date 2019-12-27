@@ -66,8 +66,12 @@ def openmm_simulate_amber_fs_pep(pdb_file, top_file=None, check_point=None, GPU_
         platform = omm.Platform_getPlatformByName("CUDA")
         properties = {'DeviceIndex': str(GPU_index), 'CudaPrecision': 'mixed'}
     except Exception:
-        platform = omm.Platform_getPlatformByName("OpenCL")
-        properties = {'DeviceIndex': str(GPU_index)}
+        try:
+            platform = omm.Platform_getPlatformByName("OpenCL")
+            properties = {'DeviceIndex': str(GPU_index)}
+        except Exception:
+            # Run with CPU (for dev testing)
+            platform, properties = None, None
 
     simulation = app.Simulation(pdb.topology, system, integrator, platform, properties)
 
