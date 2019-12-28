@@ -6,7 +6,7 @@ from deepdrive.md import openmm_simulate_amber_fs_pep
 # TODO: determine  default type for report and length
 
 
-def validate_file(ctx, param, value):
+def validate_path(ctx, param, value):
     """
     Adds abspath to non-None file
     """
@@ -28,17 +28,17 @@ def validate_len(ctx, param, value):
 
 @click.command()
 @click.option('-p', '--pdb', required=True,
-              callback=validate_file, help='PDB file')
+              callback=validate_path, help='PDB file')
 @click.option('-o', '--out', required=True,
-              callback=validate_file,
+              callback=validate_path,
               help='Output directory for MD simulation data')
 @click.option('-i', '--sim_id', required=True, type=int,
               callback=validate_len,
               help='Simulation ID in pipeline [0...N]')
 @click.option('-t', '--topol', default=None, 
-              callback=validate_file, help='Topology file')
+              callback=validate_path, help='Topology file')
 @click.option('-c', '--chk', default=None,
-              callback=validate_file,
+              callback=validate_path,
               help='Checkpoint file to restart simulation')
 @click.option('-l', '--len', 'length', default=10, type=float,
               callback=validate_len,
