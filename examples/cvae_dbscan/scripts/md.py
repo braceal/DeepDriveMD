@@ -12,7 +12,7 @@ def validate_path(ctx, param, value):
     """
     if value:
         path = os.path.abspath(value)
-        if not os.path.exist(path)
+        if not os.path.exists(path):
             raise click.BadParameter(f'path does not exist {path}')
         return path
 
