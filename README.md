@@ -21,6 +21,7 @@ module load python/3.7.0-anaconda3-5.3.0
 conda env create python=3.7 -p ./conda-env -f environment.yml
 conda activate ./conda-env
 #conda install -p ./conda-env -c omnia openmm-setup
+#conda install pytorch torchvision cpuonly -c pytorch
 ```
 
 Installing openmm from source
