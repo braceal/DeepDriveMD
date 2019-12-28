@@ -9,8 +9,9 @@ import molecules.sim as sim
 
 # TODO: use molecules package instead
 
-def openmm_simulate_amber_fs_pep(pdb_file, top_file=None, check_point=None, GPU_index=0,
-                                 output_traj="output.dcd", output_log="output.log", output_cm=None,
+def openmm_simulate_amber_fs_pep(pdb_file, top_file=None, checkpnt_fname='checkpnt.chk', 
+                                 checkpnt=None, GPU_index=0,
+                                 output_traj='output.dcd', output_log='output.log', output_cm=None,
                                  report_time=10*u.picoseconds, sim_time=10*u.nanoseconds):
     """
     Start and run an OpenMM NVT simulation with Langevin integrator at 2 fs 
@@ -24,7 +25,7 @@ def openmm_simulate_amber_fs_pep(pdb_file, top_file=None, check_point=None, GPU_
         This is the molecule configuration file contains all the atom position
         and PBC (periodic boundary condition) box in the system. 
    
-    check_point : None or check point file to load 
+    checkpnt : None or check point file to load 
         
     GPU_index : Int or Str 
         The device # of GPU to use for running the simulation. Use Strings, '0,1'
@@ -63,11 +64,11 @@ def openmm_simulate_amber_fs_pep(pdb_file, top_file=None, check_point=None, GPU_
     integrator.setConstraintTolerance(0.00001)
 
     try:
-        platform = omm.Platform_getPlatformByName("CUDA")
+        platform = omm.Platform_getPlatformByName('CUDA')
         properties = {'DeviceIndex': str(GPU_index), 'CudaPrecision': 'mixed'}
     except Exception:
         try:
-            platform = omm.Platform_getPlatformByName("OpenCL")
+            platform = omm.Platform_getPlatformByName('OpenCL')
             properties = {'DeviceIndex': str(GPU_index)}
         except Exception:
             # Run with CPU (for dev testing)
@@ -89,9 +90,9 @@ def openmm_simulate_amber_fs_pep(pdb_file, top_file=None, check_point=None, GPU_
     simulation.reporters.append(app.StateDataReporter(output_log,
             report_freq, step=True, time=True, speed=True,
             potentialEnergy=True, temperature=True, totalEnergy=True))
-    simulation.reporters.append(app.CheckpointReporter('checkpnt.chk', report_freq))
+    simulation.reporters.append(app.CheckpointReporter(checkpnt_fname, report_freq))
 
-    if check_point:
-        simulation.loadCheckpoint(check_point)
+    if checkpnt:
+        simulation.loadCheckpoint(checkpnt)
     nsteps = int(sim_time/dt)
     simulation.step(nsteps)
