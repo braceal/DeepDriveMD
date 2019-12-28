@@ -1,36 +1,5 @@
-import h5py
 import numpy as np
-# TODO: update import after molecules bug is fixed
-#from molecules.utils import triu_to_full
-
-def triu_to_full(cm0): 
-    num_res = int(np.ceil((len(cm0) * 2) ** 0.5))
-    iu1 = np.triu_indices(num_res, 1)
-
-    cm_full = np.zeros((num_res, num_res))
-    cm_full[iu1] = cm0 
-    cm_full.T[iu1] = cm0 
-    np.fill_diagonal(cm_full, 1)
-    
-    return cm_full
-
-def open_h5(h5_file):
-    """
-    Opens file in single write multiple reader mode
-    libver specifies newest available version,
-    may not be backwards compatable
-
-    Parameters
-    ----------
-    h5_file : str
-        name of h5 file to open
-
-    Returns
-    -------
-    open h5py file
-
-    """
-    return h5py.File(h5_file, 'r', libver='latest', swmr=True)
+from molecules.utils import triu_to_full
 
 
 def cm_to_cvae(cm_data_lists): 
