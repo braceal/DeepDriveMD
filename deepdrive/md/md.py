@@ -87,6 +87,7 @@ def openmm_simulate_amber_fs_pep(pdb_file, top_file=None, checkpnt_fname='checkp
     simulation.reporters.append(app.DCDReporter(output_traj, report_freq))
     if output_cm:
         simulation.reporters.append(sim.ContactMapReporter(output_cm, report_freq))
+
     simulation.reporters.append(app.StateDataReporter(output_log,
             report_freq, step=True, time=True, speed=True,
             potentialEnergy=True, temperature=True, totalEnergy=True))
