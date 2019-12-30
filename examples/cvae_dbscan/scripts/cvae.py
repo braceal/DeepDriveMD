@@ -51,12 +51,12 @@ def main(input_path, out_path, gpu, epochs, batch_size, latent_dim):
 
         # Set model hyperparameters for encoder and decoder
         shared_hparams = {'num_conv_layers': 4,
-                         'filters': [64, 64, 64, 64],
-                         'kernels': [3, 3, 3, 3],
-                         'strides': [1, 2, 1, 1],
-                         'num_affine_layers': 1,
-                         'affine_widths': [128],
-                         'latent_dim': latent_dim
+                          'filters': [64, 64, 64, 64],
+                          'kernels': [3, 3, 3, 3],
+                          'strides': [1, 2, 1, 1],
+                          'num_affine_layers': 1,
+                          'affine_widths': [128],
+                          'latent_dim': latent_dim
                          }
 
         affine_dropouts = [0]
