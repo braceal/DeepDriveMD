@@ -47,6 +47,8 @@ def main(input_path, out_path, gpu, epochs, batch_size, latent_dim):
         # Partition input data into 80-20 train valid split
         train, valid = data[:split], data[split:]
 
+        # Get shape of an individual contact matrix 
+        # (ignore total number of matrices)
         input_shape = train.shape[1:]
 
         # Set model hyperparameters for encoder and decoder
