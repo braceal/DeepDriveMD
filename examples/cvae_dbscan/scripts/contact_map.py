@@ -6,17 +6,7 @@ from glob import glob
 from contextlib import ExitStack
 from molecules.utils import open_h5
 from deepdrive.preproc import cm_to_cvae
-
-# TODO: Make validator file (in deepdrive). This is used in ./md.py ./cvae.py as well
-def validate_path(ctx, param, value):
-    """
-    Adds abspath to non-None file
-    """
-    if value:
-        path = os.path.abspath(value)
-        if not os.path.exists(path):
-            raise click.BadParameter(f'path does not exist {path}')
-        return path
+from deepdrive.utils.validators import validate_path
 
 
 @click.command()

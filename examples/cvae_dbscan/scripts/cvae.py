@@ -5,20 +5,9 @@ from molecules.utils import open_h5
 from molecules.ml.unsupervised import (VAE, EncoderConvolution2D, 
                                        DecoderConvolution2D)
 from molecules.ml.unsupervised.callbacks import (EmbeddingCallback,
-                                                LossHistory) 
+                                                LossHistory)
+from deepdrive.utils.validators import validate_path, validate_positive
 
-
-def validate_path(ctx, param, value):
-    """
-    Adds abspath to non-None file
-    """
-    if value:
-        path = os.path.abspath(value)
-        if not os.path.exists(path):
-            raise click.BadParameter(f'path does not exist {path}')
-        return path
-
-# TODO: take epoch, batch_size, etc as arguments
 
 @click.command()
 @click.option('-i', '--input', 'input_path', required=True,
@@ -27,11 +16,19 @@ def validate_path(ctx, param, value):
 @click.option('-o', '--out', 'out_path', required=True,
               callback=validate_path,
               help='Output directory for model data')
-@click.option('-d', '--latet_dim', default=3, type=int,
-             help='Number of dimensions in latent space')
 @click.option('-g', '--gpu', default=0, type=int,
-             help='GPU id')
-def main(input_path, out_path, latet_dim, gpu):
+              callback=validate_positive,
+              help='GPU id')
+@click.option('-e', '--epochs', default=100, type=int,
+              callback=validate_positive,
+              help='Number of epochs to train for')
+@click.option('-b', '--batch_size', default=512, type=int,
+              callback=validate_positive,
+              help='Batch size for training')
+@click.option('-d', '--latet_dim', default=3, type=int,
+              callback=validate_positive,
+              help='Number of dimensions in latent space')
+def main(input_path, out_path, gpu, epochs, batch_size, latet_dim):
 
     # Set CUDA environment variables
     os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
@@ -42,7 +39,7 @@ def main(input_path, out_path, latet_dim, gpu):
         # Access contact matrix data from h5 file
         data = input_file['contact_maps']
 
-        # Train validation split index
+        # 80-20 train validation split index
         split = int(0.8 * len(data))
 
         # Partition input data into 80-20 train valid split
@@ -71,7 +68,7 @@ def main(input_path, out_path, latet_dim, gpu):
         loss_callback = LossHistory()
 
         cvae.train(data=train, validation_data=valid, 
-                   batch_size=512, epochs=100, 
+                   batch_size=batch_size, epochs=epochs, 
                    callbacks=[embed_callback, loss_callback])
 
         # Define file paths to store model performance and weights 

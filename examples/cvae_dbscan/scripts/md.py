@@ -2,28 +2,7 @@ import os
 import click
 import simtk.unit as u
 from deepdrive.md import openmm_simulate_amber_fs_pep
-
-# TODO: determine  default type for report and length
-
-
-def validate_path(ctx, param, value):
-    """
-    Adds abspath to non-None file
-    """
-    if value:
-        path = os.path.abspath(value)
-        if not os.path.exists(path):
-            raise click.BadParameter(f'path does not exist {path}')
-        return path
-
-
-def validate_len(ctx, param, value):
-    """
-    Checks that length is greater than 0
-    """
-    if value < 0:
-        raise click.BadParameter(f'must be greater than or equal to 0, currently {value}')
-    return value
+from deepdrive.utils.validators import validate_path, validate_positive
 
 
 @click.command()
@@ -33,7 +12,7 @@ def validate_len(ctx, param, value):
               callback=validate_path,
               help='Output directory for MD simulation data')
 @click.option('-i', '--sim_id', required=True, type=int,
-              callback=validate_len,
+              callback=validate_positive,
               help='Simulation ID in pipeline [0...N]')
 @click.option('-t', '--topol', default=None, 
               callback=validate_path, help='Topology file')
@@ -41,12 +20,13 @@ def validate_len(ctx, param, value):
               callback=validate_path,
               help='Checkpoint file to restart simulation')
 @click.option('-l', '--len', 'length', default=10, type=float,
-              callback=validate_len,
+              callback=validate_positive,
               help='How long (ns) the system will be simulated')
 @click.option('-r', '--report', default=50, type=float,
-              callback=validate_len,
+              callback=validate_positive,
               help= 'Time interval (ps) between reports')
-@click.option('-g', '--gpu', default=0, type=int, 
+@click.option('-g', '--gpu', default=0, type=int,
+              callback=validate_positive,
               help='ID of gpu to use for the simulation')
 def main(pdb, out, sim_id, topol, chk, length, report, gpu):
     openmm_simulate_amber_fs_pep(pdb,
