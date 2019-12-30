@@ -4,7 +4,7 @@ from keras.optimizers import RMSprop
 from molecules.utils import open_h5
 from molecules.ml.unsupervised import (VAE, EncoderConvolution2D, 
                                        DecoderConvolution2D)
-from molecules.ml.unsupervised.callback import (EmbeddingCallback,
+from molecules.ml.unsupervised.callbacks import (EmbeddingCallback,
                                                 LossHistory) 
 
 
@@ -21,7 +21,7 @@ def validate_path(ctx, param, value):
 # TODO: take epoch, batch_size, etc as arguments
 
 @click.command()
-@click.option('-i', '--input', 'input_path', default='cvae_input.h5',
+@click.option('-i', '--input', 'input_path', required=True,
               callback=validate_path,
               help='Input: OpenMM simulation path')
 @click.option('-o', '--out', 'out_path', required=True,
@@ -35,7 +35,7 @@ def main(input_path, out_path, latet_dim, gpu):
 
     # Set CUDA environment variables
     os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
-    os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu_id)
+    os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu)
 
     with open_h5(input_path) as input_file:
 
@@ -48,7 +48,7 @@ def main(input_path, out_path, latet_dim, gpu):
         # Partition input data into 80-20 train valid split
         train, valid = data[:split], data[split:]
 
-        input_shape = train.shape
+        input_shape = train.shape[1:]
 
         encoder = EncoderConvolution2D(input_shape=input_shape)
 

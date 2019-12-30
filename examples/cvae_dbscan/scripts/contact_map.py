@@ -20,10 +20,10 @@ def validate_path(ctx, param, value):
 
 
 @click.command()
-@click.option('-i', '--sim_path', default=None,
+@click.option('-i', '--sim_path', required=True,
               callback=validate_path,
               help='OpenMM simulation path containing output-cm-*.h5 files')
-@click.option('-o', '--out', default=None,
+@click.option('-o', '--out', required=True,
               callback=validate_path,
               help='2D contact map h5 file')
 def main(sim_path, out):
