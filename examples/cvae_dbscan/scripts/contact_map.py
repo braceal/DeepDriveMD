@@ -7,7 +7,7 @@ from contextlib import ExitStack
 from molecules.utils import open_h5
 from deepdrive.preproc import cm_to_cvae
 
-# TODO: Make validator file. This is used in ./md.py as well
+# TODO: Make validator file (in deepdrive). This is used in ./md.py ./cvae.py as well
 def validate_path(ctx, param, value):
     """
     Adds abspath to non-None file
