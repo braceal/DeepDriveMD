@@ -1,7 +1,6 @@
 import os
 import h5py
 import click
-import warnings
 from glob import glob
 from contextlib import ExitStack
 from molecules.utils import open_h5

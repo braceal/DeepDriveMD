@@ -14,10 +14,13 @@ from deepdrive.utils.validators import validate_path, validate_positive
 @click.command()
 @click.option('-i', '--input', 'input_path', required=True,
               callback=validate_path,
-              help='Input: OpenMM simulation path')
+              help='Path to file containing preprocessed contact matrix data')
 @click.option('-o', '--out', 'out_path', required=True,
               callback=validate_path,
               help='Output directory for model data')
+@click.option('-m', '--model_id', required=True, type=int,
+              callback=validate_positive,
+              help='Model ID in pipeline [0...N]')
 @click.option('-g', '--gpu', default=0, type=int,
               callback=validate_positive,
               help='GPU id')
@@ -30,7 +33,7 @@ from deepdrive.utils.validators import validate_path, validate_positive
 @click.option('-d', '--latent_dim', default=3, type=int,
               callback=validate_positive,
               help='Number of dimensions in latent space')
-def main(input_path, out_path, gpu, epochs, batch_size, latent_dim):
+def main(input_path, out_path, model_id, gpu, epochs, batch_size, latent_dim):
 
     # Set CUDA environment variables
     os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
@@ -94,11 +97,11 @@ def main(input_path, out_path, gpu, epochs, batch_size, latent_dim):
                    callbacks=[embed_callback, loss_callback])
 
         # Define file paths to store model performance and weights 
-        weight_path = os.path.join(out_path, 'weight.h5')
-        embed_path = os.path.join(out_path, 'embed.npy')
-        idx_path = os.path.join(out_path, 'embed-idx.npy')
-        loss_path = os.path.join(out_path, 'loss.npy')
-        val_loss_path = os.path.join(out_path, 'val-loss.npy')
+        weight_path = os.path.join(out_path, f'weight-{model_id}.h5')
+        embed_path = os.path.join(out_path, f'embed-{model_id}.npy')
+        idx_path = os.path.join(out_path, f'embed-idx-{model_id}.npy')
+        loss_path = os.path.join(out_path, f'loss-{model_id}.npy')
+        val_loss_path = os.path.join(out_path, f'val-loss-{model_id}.npy')
 
         # Save model performance and weights
         cvae.save_weights(weight_path)
