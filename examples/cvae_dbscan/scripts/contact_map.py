@@ -5,6 +5,7 @@ from glob import glob
 from contextlib import ExitStack
 from molecules.utils import open_h5
 from deepdrive.preproc import cm_to_cvae
+from deepdrive.utils import get_id
 from deepdrive.utils.validators import validate_path
 
 
@@ -21,8 +22,8 @@ def main(sim_path, out):
     cm_filepath = os.path.join(sim_path, 'output-cm-*.h5')
 
     # Collect contact matrix file names sorted by sim_id
-    cm_files = sorted(glob(cm_filepath), 
-                      key=lambda path: int(path.split('.h5')[-2].split('-')[-1]))
+    cm_files = sorted(glob(cm_filepath), key=get_id)
+
     if not cm_files: 
         raise FileNotFoundError(f'No h5 files found, recheck your input path {sim_path}')
 
