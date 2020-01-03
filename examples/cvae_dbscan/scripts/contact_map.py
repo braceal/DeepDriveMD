@@ -4,10 +4,17 @@ import click
 from glob import glob
 from contextlib import ExitStack
 from molecules.utils import open_h5
-from deepdrive.preproc import cm_to_cvae
 from deepdrive.utils import get_id
+from deepdrive.preproc import cm_to_cvae
 from deepdrive.utils.validators import validate_path
 
+
+# TODO: randomize contact matrix order. If this is not done, then
+#       an 80-20 train-valid split could result in poor validation
+#       accuracy since later contact matrices in the time series
+#       are more likely to have different conformations than the
+#       starting point. If this is the case, then the data bias
+#       is likely to generate poor models that don't generalize.
 
 @click.command()
 @click.option('-i', '--sim_path', required=True,
