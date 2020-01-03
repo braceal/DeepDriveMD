@@ -5,6 +5,8 @@ from deepdrive.md import openmm_simulate_amber_fs_pep
 from deepdrive.utils.validators import validate_path, validate_positive
 
 
+# TODO: change sim_id to string to encode more data
+
 @click.command()
 @click.option('-p', '--pdb', required=True,
               callback=validate_path, help='PDB file')
