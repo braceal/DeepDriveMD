@@ -102,9 +102,14 @@ def main(input_path, out_path, model_id, gpu, epochs, batch_size, latent_dim):
         idx_path = os.path.join(out_path, f'embed-idx-{model_id}.npy')
         loss_path = os.path.join(out_path, f'loss-{model_id}.npy')
         val_loss_path = os.path.join(out_path, f'val-loss-{model_id}.npy')
+        encoder_hparams_path = os.path.join(out_path, f'encoder-hparams-{model_id}.pkl')
+        decoder_hparams_path = os.path.join(out_path, f'decoder-hparams-{model_id}.pkl')
 
-        # Save model performance and weights
+
+        # Save weights, hyperparameters, and model performance
         cvae.save_weights(weight_path)
+        encoder_hparams.save(encoder_hparams_path)
+        decoder_hparams.save(decoder_hparams_path)
         embed_callback.save(embed_path=embed_path, idx_path=idx_path)
         loss_callback.save(loss_path=loss_path, val_loss_path=val_loss_path)
 
