@@ -4,8 +4,8 @@ from keras.optimizers import RMSprop
 from molecules.utils import open_h5
 from molecules.ml.unsupervised import (VAE, EncoderConvolution2D, 
                                        DecoderConvolution2D,
-                                       HyperparamsEncoder,
-                                       HyperparamsDecoder)
+                                       EncoderHyperparams,
+                                       DecoderHyperparams)
 from molecules.ml.unsupervised.callbacks import (EmbeddingCallback,
                                                 LossHistory)
 from deepdrive.utils.validators import validate_path, validate_positive
@@ -66,9 +66,9 @@ def main(input_path, out_path, model_id, gpu, epochs, batch_size, latent_dim):
 
         affine_dropouts = [0]
 
-        encoder_hparams = HyperparamsEncoder(affine_dropouts=affine_dropouts,
+        encoder_hparams = EncoderHyperparams(affine_dropouts=affine_dropouts,
                                              **shared_hparams)
-        decoder_hparams = HyperparamsDecoder(**shared_hparams)
+        decoder_hparams = DecoderHyperparams(**shared_hparams)
 
         encoder = EncoderConvolution2D(input_shape=input_shape,
                                        hyperparameters=encoder_hparams)
@@ -97,17 +97,21 @@ def main(input_path, out_path, model_id, gpu, epochs, batch_size, latent_dim):
                    callbacks=[embed_callback, loss_callback])
 
         # Define file paths to store model performance and weights 
-        weight_path = os.path.join(out_path, f'weight-{model_id}.h5')
+        ae_weight_path = os.path.join(out_path, f'ae-weight-{model_id}.h5')
+        encoder_weight_path = os.path.join(out_path, f'encoder-weight-{model_id}.h5')
+        encoder_hparams_path = os.path.join(out_path, f'encoder-hparams-{model_id}.pkl')
+        decoder_hparams_path = os.path.join(out_path, f'decoder-hparams-{model_id}.pkl')
         embed_path = os.path.join(out_path, f'embed-{model_id}.npy')
         idx_path = os.path.join(out_path, f'embed-idx-{model_id}.npy')
         loss_path = os.path.join(out_path, f'loss-{model_id}.npy')
         val_loss_path = os.path.join(out_path, f'val-loss-{model_id}.npy')
-        encoder_hparams_path = os.path.join(out_path, f'encoder-hparams-{model_id}.pkl')
-        decoder_hparams_path = os.path.join(out_path, f'decoder-hparams-{model_id}.pkl')
 
 
-        # Save weights, hyperparameters, and model performance
-        cvae.save_weights(weight_path)
+        # Save weights, hyperparameters, and model performance.
+        # Save encoder weights seperately so the full model doesn't need to be
+        # loaded during the outlier detection stage.
+        cvae.save_weights(ae_weight_path)
+        encoder.save_weights(encoder_weight_path)
         encoder_hparams.save(encoder_hparams_path)
         decoder_hparams.save(decoder_hparams_path)
         embed_callback.save(embed_path=embed_path, idx_path=idx_path)
