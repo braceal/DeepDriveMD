@@ -1,13 +1,15 @@
 import os
 import json
 import click
+import numpy as np
 from glob import glob
 from sklearn.cluster import DBSCAN
+from keras.optimizers import RMSprop
 from molecules.utils import open_h5
 from molecules.ml.unsupervised import (VAE, EncoderConvolution2D, 
                                        DecoderConvolution2D,
-                                       HyperparamsEncoder,
-                                       HyperparamsDecoder)
+                                       EncoderHyperparams,
+                                       DecoderHyperparams)
 from deepdrive.utils import get_id
 from deepdrive.utils.validators import (validate_path, 
                                         validate_positive,
@@ -15,9 +17,9 @@ from deepdrive.utils.validators import (validate_path,
 
 
 @click.command()
-@click.option('-m', '--sim_path', required=True,
+@click.option('-d', '--cm_path', required=True,
               callback=validate_path,
-              help='OpenMM simulation path containing output-cm-*.h5 files')
+              help='Preprocessed cvae-input h5 file path')
 @click.option('-c', '--cvae_path', required=True,
               callback=validate_path,
               help='CVAE model directory path')
@@ -41,16 +43,16 @@ from deepdrive.utils.validators import (validate_path,
 @click.option('-g', '--gpu', default=0, type=int,
               callback=validate_positive,
               help='GPU id')
-def main(sim_path, cvae_path, pdb_path, out_path, 
+def main(cm_path, cvae_path, pdb_path, out_path,
          ref_path, eps_path, eps, min_samples, gpu):
 
     # Set CUDA environment variables
     os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
     os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu)
     
-    # 1. Identify the latest models with lowest validation loss
+    # Identify the latest models with lowest validation loss
     # Gather validation loss reports from each model in the current pipeline round
-    # Find the minimum validation loss by taking the model_id asspciated with
+    # Find the minimum validation loss by taking the model_id associated with
     # the smallest validation loss during the last epoch. 
     best_model_id = get_id(min(glob(os.path.join(cvae_path, 'val-loss-*.npy')),
                                key=lambda loss_path: np.load(loss_path)[-1]), 'npy')
@@ -58,46 +60,28 @@ def main(sim_path, cvae_path, pdb_path, out_path,
 
     # Define paths to best model hyperparameters
     encoder_hparams_path = os.path.join(cvae_path, f'encoder-hparams-{best_model_id}.pkl')
-    decoder_hparams_path = os.path.join(cvae_path, f'decoder-hparams-{best_model_id}.pkl')
-    cvae_weight_path = os.path.join(cvae_path, f'weight-{best_model_id}.h5')
 
-    encoder_hparams = HyperparamsEncoder.load(encoder_hparams_path)
-    decoder_hparams = HyperparamsDecoder.load(decoder_hparams_path)
+    encoder_weight_path = os.path.join(cvae_path, f'encoder-weight-{best_model_id}.h5')
 
-    with open_h5(input_path) as input_file:
+    encoder_hparams = EncoderHyperparams.load(encoder_hparams_path)
+
+    with open_h5(cm_path) as file:
 
         # Access contact matrix data from h5 file
-        data = input_file['contact_maps']
+        data = file['contact_maps']
 
         # Get shape of an individual contact matrix 
         # (ignore total number of matrices)
-        input_shape = train.shape[1:]
+        input_shape = data.shape[1:]
 
         encoder = EncoderConvolution2D(input_shape=input_shape,
                                        hyperparameters=encoder_hparams)
 
-        # Get shape attributes of the last encoder layer to define the decoder
-        encode_conv_shape, num_conv_params = encoder.get_final_conv_params()
-
-        decoder = DecoderConvolution2D(output_shape=input_shape,
-                                       enc_conv_params=num_conv_params,
-                                       enc_conv_shape=encode_conv_shape,
-                                       hyperparameters=decoder_hparams)
-
-        optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.0)
-
-        # Best CVAE model, used for creating contact matrix 
-        # embeddings for outlier detection
-        cvae = VAE(input_shape=input_shape,
-                   encoder=encoder,
-                   decoder=decoder,
-                   optimizer=optimizer)
-
         # Load best model weights
-        cvae.load_weights(cvae_weight_path)
+        encoder.load_weights(encoder_weight_path)
 
         # Create contact matrix embeddings
-        cm_embeddings = cvae.embed(data)
+        cm_embeddings, *_ = encoder.embed(data)
 
     # If previous epsilon values have been calculated, load the record from disk.
     # eps_record stores a dictionary from cvae_weight path which uniquely identifies
@@ -131,8 +115,6 @@ def main(sim_path, cvae_path, pdb_path, out_path,
     # Save the eps for next round of pipeline
     with open(eps_path, 'w') as file:
         json.dump(eps_record, file)
-
-
 
 
 
