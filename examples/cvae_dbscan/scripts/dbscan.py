@@ -122,10 +122,8 @@ def main(sim_path, cm_path, cvae_path, pdb_out_path,
 
     # Remove old pdb outliers that are now inside a cluster
     for pdb_fname in outlier_pdb_fnames:
-        # Read atoms and coordinates from PDB
-        u = Universe(pdb_fname)
-        # Select carbon-alpha atoms
-        ca = u.select_atoms('name CA')
+        # Read atoms and coordinates from PDB and select carbon-alpha atoms
+        ca = Universe(pdb_fname).select_atoms('name CA')
         # Compute contact matrix
         cm_matrix = (distances.self_distance_array(ca.positions) < 8.0) * 1.0
         # Use autoecoder to generate embedding of contact matrix
