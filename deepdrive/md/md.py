@@ -49,7 +49,7 @@ def openmm_simulate_amber_fs_pep(pdb_file, top_file=None, checkpnt_fname='checkp
     """
 
     if top_file: 
-        pdb = pmd.load_file(top_file, xyz = pdb_file)
+        pdb = pmd.load_file(top_file, xyz=pdb_file)
         system = pdb.createSystem(nonbondedMethod=app.CutoffNonPeriodic, 
                 nonbondedCutoff=1.0*u.nanometer, constraints=app.HBonds, 
                 implicitSolvent=app.OBC1)
