@@ -3,8 +3,9 @@ import json
 import click
 import numpy as np
 from glob import glob
+import MDAnalysis as mda
+from MDAnalysis.analysis import distances
 from sklearn.cluster import DBSCAN
-from keras.optimizers import RMSprop
 from molecules.utils import open_h5
 from molecules.ml.unsupervised import (VAE, EncoderConvolution2D, 
                                        DecoderConvolution2D,
@@ -17,20 +18,18 @@ from deepdrive.utils.validators import (validate_path,
 
 
 @click.command()
+@click.option('-i', '--sim_path', required=True,
+              callback=validate_path,
+              help='OpenMM simulation path containing output-cm-*.h5 files')
 @click.option('-d', '--cm_path', required=True,
               callback=validate_path,
               help='Preprocessed cvae-input h5 file path')
 @click.option('-c', '--cvae_path', required=True,
               callback=validate_path,
               help='CVAE model directory path')
-@click.option('-p', '--pdb_path', required=True,
-              callback=validate_path, help='Path to PDB file')
-@click.option('-o', '--out_path', required=True,
+@click.option('-o', '--pdb_out_path', required=True,
               callback=validate_path,
               help='Path to outputted simulation restart points')
-@click.option('-r', '--ref_path', default=None,
-              callback=validate_path,
-              help='Path to reference pdb for RMSD')
 @click.option('-e', '--eps_path', default=None,
               callback=validate_path,
               help='Path to eps record for DBSCAN')
@@ -43,8 +42,8 @@ from deepdrive.utils.validators import (validate_path,
 @click.option('-g', '--gpu', default=0, type=int,
               callback=validate_positive,
               help='GPU id')
-def main(cm_path, cvae_path, pdb_path, out_path,
-         ref_path, eps_path, eps, min_samples, gpu):
+def main(sim_path, cm_path, cvae_path, pdb_out_path,
+         eps_path, eps, min_samples, gpu):
 
     # Set CUDA environment variables
     os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
@@ -90,7 +89,7 @@ def main(cm_path, cvae_path, pdb_path, out_path,
         with open(eps_path) as file:
             eps_record = json.load(file)
 
-        best_eps = eps_record.get(cvae_weight_path)
+        best_eps = eps_record.get(encoder_weight_path)
 
         if best_eps:
             eps = best_eps
@@ -105,18 +104,56 @@ def main(cm_path, cvae_path, pdb_path, out_path,
         # Array of outlier indices in latent space
         outliers = np.flatnonzero(db.labels_ == -1)
 
-        # If the number of outliers is greater than 150, update eps
+        # If the number of outliers is greater than 150, update eps.
+        # Each CVAE model has a different optimal eps.
         if len(outliers) > 150:
             eps = eps + 0.05
         else: 
-            eps_record[cvae_weight_path] = eps
+            eps_record[encoder_weight_path] = eps
             break
 
     # Save the eps for next round of pipeline
     with open(eps_path, 'w') as file:
         json.dump(eps_record, file)
 
+    # TODO: put in shared folder
+    # Get list of current outlier pdb files
+    outlier_pdb_fnames = sorted(glob(os.path.join(sim_path, 'outlier-*.pdb')))
 
+    # Remove old pdb outliers that are now inside a cluster
+    for pdb_fname in outlier_pdb_fnames:
+        # Read atoms and coordinates from PDB
+        u = Universe(pdb_fname)
+        # Select carbon-alpha atoms
+        ca = u.select_atoms('name CA')
+        # Compute contact matrix
+        cm_matrix = (distances.self_distance_array(ca.positions) < 8.0) * 1.0
+        # Use autoecoder to generate embedding of contact matrix
+        embedding = encoder.embed(cm_matrix)
+        # Cluster embedded contact matrix
+        cluster_labels = db.fit_predict(embedding)
+        # If PDB is not an outlier, remove it from waiting list
+        if cluster_labels[0] != -1:
+            os.remove(pdb_fname)
+
+    # Get list of simulation trajectory files (Assume all are equal length)
+    traj_fnames = sorted(glob(os.path.join(sim_path, 'output-*.dcd')))
+
+    # Get list of simulation PDB files 
+    pdb_fnames = sorted(glob(os.path.join(sim_path, 'input-*.pdb')))
+
+    # Get total number of simulations
+    sim_count = len(traj_fnames)
+
+    # Get simulation indices and frame number coresponding to outliers
+    outlier_indices = map(lambda outlier : divmod(sim_count, outlier), outliers)
+
+    for sim_id, frame in outlier_indices:
+        # TODO: and pipeline-id to pdb_out_path
+        pdb_fname = os.path.join(pdb_out_path, f'outlier-{sim_id}-{frame}.pdb')
+        mda_traj = mda.Universe(pdb_fnames[sim_id], traj_fnames[sim_id])
+        pdb = mda.Writer(pdb_fname)
+        pdb.write(mda_traj.atoms)
 
 
 if __name__ == '__main__':
