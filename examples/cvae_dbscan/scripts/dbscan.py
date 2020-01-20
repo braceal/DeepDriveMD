@@ -93,6 +93,7 @@ def main(sim_path, shared_path, cm_path, cvae_path,
 
     best_eps = eps_record.get(encoder_weight_path)
 
+    # If eps_record contains previous eps value then use it, otherwise use default.
     if best_eps:
         eps = best_eps
 
@@ -119,7 +120,7 @@ def main(sim_path, shared_path, cm_path, cvae_path,
     # TODO: put rmsd to native state in fname to parallelize greedy 
     #       search for low rmsd conformations to spawn new simulations.
     # Get list of current outlier pdb files
-    outlier_pdb_fnames = sorted(glob(os.path.join(sim_path, 'outlier-*.pdb')))
+    outlier_pdb_fnames = sorted(glob(os.path.join(shared_path, 'outlier-*.pdb')))
 
     # Remove old pdb outliers that are now inside a cluster
     for pdb_fname in outlier_pdb_fnames:
