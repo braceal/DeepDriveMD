@@ -75,21 +75,7 @@ def main(sim_path, shared_path, cm_path, cvae_path,
 
         encoder = EncoderConvolution2D(input_shape=input_shape,
                                        hyperparameters=encoder_hparams)
-tlier_pdb_fnames = sorted(glob(os.path.join(sim_path, 'outlier-*.pdb')))
 
-    # Remove old pdb outliers that are now inside a cluster
-    for pdb_fname in outlier_pdb_fnames:
-        # Read atoms and coordinates from PDB and select carbon-alpha atoms
-        ca = Universe(pdb_fname).select_atoms('name CA')
-        # Compute contact matrix
-        cm_matrix = (distances.self_distance_array(ca.positions) < 8.0) * 1.0
-        # Use autoecoder to generate embedding of contact matrix
-        embedding = encoder.embed(cm_matrix)
-        # Cluster embedded contact matrix
-        cluster_labels = db.fit_predict(embedding)
-        # If PDB is not an outlier, remove it from waiting list
-        if cluster_labels[0] != -1:
-            os.remove(pdb_fname)
         # Load best model weights
         encoder.load_weights(encoder_weight_path)
 
