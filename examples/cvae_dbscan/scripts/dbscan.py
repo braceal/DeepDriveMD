@@ -20,19 +20,19 @@ from deepdrive.utils.validators import (validate_path,
 @click.command()
 @click.option('-i', '--sim_path', required=True,
               callback=validate_path,
-              help='OpenMM simulation path containing output-cm-*.h5 files')
+              help='OpenMM simulation path containing *.dcd and *.pdb files')
+@click.option('-s', '--shared_path', required=True,
+              callback=validate_path,
+              help='Path to folder shared between outlier and MD stages.')
 @click.option('-d', '--cm_path', required=True,
               callback=validate_path,
               help='Preprocessed cvae-input h5 file path')
 @click.option('-c', '--cvae_path', required=True,
               callback=validate_path,
               help='CVAE model directory path')
-@click.option('-o', '--pdb_out_path', required=True,
+@click.option('-e', '--eps_path', required=True,
               callback=validate_path,
-              help='Path to outputted simulation restart points')
-@click.option('-e', '--eps_path', default=None,
-              callback=validate_path,
-              help='Path to eps record for DBSCAN')
+              help='Path to eps record for DBSCAN. Empty files are valid.')
 @click.option('-E', '--eps', default=0.2, type=float,
               callback=validate_between_zero_and_one,
               help='Value of eps in the DBSCAN algorithm')
@@ -42,7 +42,7 @@ from deepdrive.utils.validators import (validate_path,
 @click.option('-g', '--gpu', default=0, type=int,
               callback=validate_positive,
               help='GPU id')
-def main(sim_path, cm_path, cvae_path, pdb_out_path,
+def main(sim_path, shared_path, cm_path, cvae_path,
          eps_path, eps, min_samples, gpu):
 
     # Set CUDA environment variables
@@ -75,7 +75,21 @@ def main(sim_path, cm_path, cvae_path, pdb_out_path,
 
         encoder = EncoderConvolution2D(input_shape=input_shape,
                                        hyperparameters=encoder_hparams)
+tlier_pdb_fnames = sorted(glob(os.path.join(sim_path, 'outlier-*.pdb')))
 
+    # Remove old pdb outliers that are now inside a cluster
+    for pdb_fname in outlier_pdb_fnames:
+        # Read atoms and coordinates from PDB and select carbon-alpha atoms
+        ca = Universe(pdb_fname).select_atoms('name CA')
+        # Compute contact matrix
+        cm_matrix = (distances.self_distance_array(ca.positions) < 8.0) * 1.0
+        # Use autoecoder to generate embedding of contact matrix
+        embedding = encoder.embed(cm_matrix)
+        # Cluster embedded contact matrix
+        cluster_labels = db.fit_predict(embedding)
+        # If PDB is not an outlier, remove it from waiting list
+        if cluster_labels[0] != -1:
+            os.remove(pdb_fname)
         # Load best model weights
         encoder.load_weights(encoder_weight_path)
 
@@ -85,17 +99,16 @@ def main(sim_path, cm_path, cvae_path, pdb_out_path,
     # If previous epsilon values have been calculated, load the record from disk.
     # eps_record stores a dictionary from cvae_weight path which uniquely identifies
     # a model, to the epsilon value previously calculated for that model.
-    if eps_path:
-        with open(eps_path) as file:
+    with open(eps_path) as file:
+        try:
             eps_record = json.load(file)
+        except json.decoder.JSONDecodeError:
+            eps_record = {}
 
-        best_eps = eps_record.get(encoder_weight_path)
+    best_eps = eps_record.get(encoder_weight_path)
 
-        if best_eps:
-            eps = best_eps
-
-    else:
-        eps_record = {}
+    if best_eps:
+        eps = best_eps
 
     # Search for right eps for DBSCAN 
     while True:
@@ -117,6 +130,8 @@ def main(sim_path, cm_path, cvae_path, pdb_out_path,
         json.dump(eps_record, file)
 
     # TODO: put in shared folder
+    # TODO: put rmsd to native state in fname to parallelize greedy 
+    #       search for low rmsd conformations to spawn new simulations.
     # Get list of current outlier pdb files
     outlier_pdb_fnames = sorted(glob(os.path.join(sim_path, 'outlier-*.pdb')))
 
@@ -147,11 +162,10 @@ def main(sim_path, cm_path, cvae_path, pdb_out_path,
     outlier_indices = map(lambda outlier : divmod(sim_count, outlier), outliers)
 
     for sim_id, frame in outlier_indices:
-        # TODO: and pipeline-id to pdb_out_path
-        pdb_fname = os.path.join(pdb_out_path, f'outlier-{sim_id}-{frame}.pdb')
+        pdb_fname = os.path.join(shared_path, f'outlier-{sim_id}-{frame}.pdb')
         mda_traj = mda.Universe(pdb_fnames[sim_id], traj_fnames[sim_id])
         pdb = mda.Writer(pdb_fname)
-        pdb.write(mda_traj.atoms)
+        pdb.write(mda_traj[frame].atoms)
 
 
 if __name__ == '__main__':
