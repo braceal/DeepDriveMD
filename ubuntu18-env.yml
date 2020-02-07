@@ -20,6 +20,7 @@ dependencies:
     - MDAnalysis==0.20.1
     - tables==3.6.1
     - click==7.0
+    - radical.entk==1.0.0
     - pycodestyle==2.5.0
     - pydocstyle==4.0.1
     - pylint==2.3.1
