@@ -16,7 +16,7 @@ class TaskManager(metaclass=ABCMeta):
         self.gpu_reqs = gpu_reqs
 
     @abstractmethod
-    def tasks(self):
+    def tasks(self, pipeline_id):
         """
         Returns
         -------

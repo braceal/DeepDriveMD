@@ -29,13 +29,13 @@ class BasicMD(TaskManager):
         self.cwd = os.getcwd()
 
 
-    def task(self, sim_num, time_stamp):
+    def task(self, sim_num, time_stamp, pipeline_id):
 
         # TODO: update cuda version
         # TODO: next_pdb
 
 
-        md_dir = f'{self.cwd}/data/md/pipeline-{self.pipeline_id}'
+        md_dir = f'{self.cwd}/data/md/pipeline-{pipeline_id}'
             
         task = Task()
 
@@ -64,14 +64,15 @@ class BasicMD(TaskManager):
         return task
 
 
-    def tasks(self):
+    def tasks(self, pipeline_id):
         """
         Returns
         -------
         set of tasks to be added to the MD stage
 
         """
+        # TODO: incorporate or remove timestamp
         time_stamp = int(time.time())
-        return {self.task(i, time_stamp) for i in range(self.num_sims)}
+        return {self.task(i, time_stamp, pipeline_id) for i in range(self.num_sims)}
 
             

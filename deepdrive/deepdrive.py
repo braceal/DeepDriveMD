@@ -105,7 +105,7 @@ class DeepDriveMD:
         stage = Stage()
         stage.name = self.md_stage_name
         for sim in self.md_sims:
-            stage.add_tasks(set(sim.tasks()))
+            stage.add_tasks(set(sim.tasks(self.current_iter)))
         return stage
 
 
@@ -113,7 +113,7 @@ class DeepDriveMD:
         stage = Stage()
         stage.name = self.pre_stage_name
         for preproc in self.preprocs:
-            stage.add_tasks(set(preproc.tasks()))
+            stage.add_tasks(set(preproc.tasks(self.current_iter)))
         return stage
 
 
@@ -121,7 +121,7 @@ class DeepDriveMD:
         stage = Stage()
         stage.name = self.ml_stage_name
         for alg in self.ml_algs:
-            stage.add_tasks(set(alg.tasks()))
+            stage.add_tasks(set(alg.tasks(self.current_iter)))
         return stage
 
 
@@ -129,7 +129,7 @@ class DeepDriveMD:
         stage = Stage()
         stage.name = self.outlier_stage_name
         for alg in self.outlier_algs:
-            stage.add_tasks(set(alg.tasks()))
+            stage.add_tasks(set(alg.tasks(self.current_iter)))
 
         stage.post_exec = {
             'condition': lambda: self.current_iter < self.max_iter,
