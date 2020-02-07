@@ -22,7 +22,12 @@ class ContactMatrix(TaskManager):
         self.cwd = os.getcwd()
 
     def tasks(self, pipeline_id):
+        """
+        Returns
+        -------
+        Set of tasks to be added to the preprocessing stage.
 
+        """
         md_dir = f'{self.cwd}/data/md/pipeline-{pipeline_id}'
         preproc_dir = f'{self.cwd}/data/preproc/pipeline-{pipeline_id}'
         

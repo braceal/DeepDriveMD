@@ -33,7 +33,7 @@ class CVAE(TaskManager):
         batch_size = 512
 
         cvae_dir = f'{self.cwd}/data/ml/pipeline-{pipeline_id}'
-        cm_data_file = f'{self.cwd}/data/preproc/pipeline-{pipeline_id}/cvae-input.h5'
+        cm_data_path = f'{self.cwd}/data/preproc/pipeline-{pipeline_id}/cvae-input.h5'
 
         task = Task()
 
@@ -49,14 +49,14 @@ class CVAE(TaskManager):
         task.arguments = [f'{self.cwd}/examples/cvae_dbscan/scripts/cvae.py']
 
         # Arguments for ML task
-        task.arguments.extend(['--input', cm_data_file,
+        task.arguments.extend(['--input', cm_data_path,
                                '--out', cvae_dir,
                                '--model_id', f'{model_id}',
                                '--epochs', f'{epochs}',
                                '--batch_size', f'{batch_size}',
                                '--latent_dim', f'{latent_dim}'])
         
-        # Assign hardware requirements
+        # Specify hardware requirements
         task.cpu_reqs = self.cpu_reqs
         task.gpu_reqs = self.gpu_reqs
 
@@ -67,7 +67,7 @@ class CVAE(TaskManager):
         """
         Returns
         -------
-        set of tasks to be added to the MD stage
+        set of tasks to be added to the ML stage.
 
         """
         # TODO: incorporate or remove timestamp

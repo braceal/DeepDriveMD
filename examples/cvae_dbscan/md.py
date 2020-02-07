@@ -32,8 +32,7 @@ class BasicMD(TaskManager):
     def _task(self, pipeline_id, sim_num, time_stamp):
 
         # TODO: update cuda version
-        # TODO: next_pdb
-
+        # TODO: implement next_pdb
 
         md_dir = f'{self.cwd}/data/md/pipeline-{pipeline_id}'
             
@@ -57,7 +56,7 @@ class BasicMD(TaskManager):
                                '--len', sim_len,
                                '--sim_id', sim_num])
 
-        # Assign hardware requirements
+        # Specify hardware requirements
         task.cpu_reqs = self.cpu_reqs
         task.gpu_reqs = self.gpu_reqs
 
@@ -68,7 +67,7 @@ class BasicMD(TaskManager):
         """
         Returns
         -------
-        set of tasks to be added to the MD stage
+        set of tasks to be added to the MD stage.
 
         """
         # TODO: incorporate or remove timestamp
