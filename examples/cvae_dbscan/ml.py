@@ -1,10 +1,10 @@
 import os
 import time
-from deepdrive import TaskMan
+from deepdrive import TaskManager
 
 
-class CVAE(TaskMan):
-    def __init__(self, task_name, num_ml, cpu_reqs, gpu_reqs):
+class CVAE(TaskManager):
+    def __init__(self, num_ml, cpu_reqs, gpu_reqs):
         """
         Parameters
         ----------
@@ -18,61 +18,59 @@ class CVAE(TaskMan):
             contains gpu hardware requirments for task
 
         """
-        super().__init__(task_name, cpu_reqs, gpu_reqs)
-        self.num_ml = num_ml
+        super().__init__(cpu_reqs, gpu_reqs)
 
-        self.conda_path = '/ccs/home/hm0/.conda/envs/omm'
+        self.num_ml = num_ml
         self.cwd = os.getcwd()
 
 
-    def output(self):
-        """
-        Effects
-        -------
-        Defines a dictionary of output to be passed to 
-        other subscribing tasks.
+    def task(self, pipeline_id, model_id, time_stamp):
 
-        Returns
-        -------
-        output dictionary
+        # Specify training hyperparameters
+        # Select latent dimension for CVAE [3, ... self.num_ml]
+        latent_dim = 3 + model_id
+        epochs = 100
+        batch_size = 512
 
-        """
-        return {'--sim_path': 'base/MD_exps/fs-pep'}
-
-    def task(self, ml_num, time_stamp):
-
-        # Select latent dimension for CVAE
-        dim = ml_num + 3 
-        cvae_dir = 'cvae_runs_%.2d_%d' % (dim, time_stamp + ml_num) 
+        cvae_dir = f'{self.cwd}/data/ml/pipeline-{pipeline_id}'
+        cm_data_file = f'{self.cwd}/data/preproc/pipeline-{pipeline_id}/cvae-input.h5'
 
         task = Task()
 
-        task.pre_exec ['. /sw/summit/python/2.7/anaconda2/5.3.0/etc/profile.d/conda.sh',
+        # Specify modules for python and cuda, activate conda env.
+        # Create output directory for generated files.
+        task.pre_exec ['module load python/3.7.0-anaconda3-5.3.0',
                        'module load cuda/9.1.85',
-                       'conda activate %s' % self.conda_path, 
-                       'export PYTHONPATH=%s/CVAE_exps:$PYTHONPATH' % self.cwd
-                       'cd %s/CVAE_exps' % self.cwd,
-                       'mkdir -p {0} && cd {0}'.format(cvae_dir)]
+                       f'conda activate {self.cwd}/conda-env/',
+                       f'mkdir -p {cvae_dir}']
 
-        task.executable = ['%s/bin/python' % self.conda_path]
+        # Specify python ML task
+        task.executable = [f'{self.cwd}/conda-env/bin/python']
+        task.arguments = [f'{self.cwd}/examples/cvae_dbscan/scripts/cvae.py']
 
-        task.arguments = ['%s/CVAE_exps/train_cvae.py' % self.cwd, 
-                          '--h5_file', self.input['ContactMatrix']['--h5_file'], 
-                          '--dim', dim] 
+        # Arguments for ML task
+        task.arguments.extend(['--input', cm_data_file,
+                               '--out', cvae_dir,
+                               '--model_id', f'{model_id}',
+                               '--epochs', f'{epochs}',
+                               '--batch_size', f'{batch_size}',
+                               '--latent_dim', f'{latent_dim}'])
         
+        # Assign hardware requirements
         task.cpu_reqs = self.cpu_reqs
         task.gpu_reqs = self.gpu_reqs
 
         return task
 
 
-    def tasks(self):
+    def tasks(self, pipeline_id):
         """
         Returns
         -------
         set of tasks to be added to the MD stage
 
         """
+        # TODO: incorporate or remove timestamp
         time_stamp = int(time.time())
-        return {self.task(i, time_stamp) for i in range(self.num_ml)}
+        return {self.task(pipeline_id, i, time_stamp) for i in range(self.num_ml)}
             
