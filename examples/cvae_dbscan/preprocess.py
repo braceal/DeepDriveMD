@@ -1,28 +1,45 @@
 import os
 from radical.entk import Task
-from deepdrive import TaskMan
+from deepdrive import TaskManager
 
 
-class ContactMatrix(TaskMan):
-    def __init__(self, task_name, cpu_reqs, gpu_reqs):
-        super().__init__(task_name, cpu_reqs, gpu_reqs)
+class ContactMatrix(TaskManager):
+    def __init__(self, cpu_reqs, gpu_reqs):
+        """
+        Parameters
+        ----------
+        cpu_reqs : dict
+            contains cpu hardware requirments for task
 
-        self.conda_path = '/ccs/home/hm0/.conda/envs/omm'
+        gpu_reqs : dict
+            contains gpu hardware requirments for task
+
+        Note: both cpu_reqs, gpu_reqs are empty.
+
+        """
+        super().__init__(cpu_reqs, gpu_reqs)
+
         self.cwd = os.getcwd()
 
-    def output(self):
-        return {'--h5_file': '%s/MD_to_CVAE/cvae_input.h5' % self.cwd}
+    def tasks(self, pipeline_id):
 
-    def tasks(self):
-        # self.input stores --sim_path: self.cwd/MD_exps/fs-pep
+        md_dir = f'{self.cwd}/data/md/pipeline-{pipeline_id}'
+        preproc_dir = f'{self.cwd}/data/preproc/pipeline-{pipeline_id}'
         
         task = Task()
 
-        task.pre_exec = ['. /sw/summit/python/2.7/anaconda2/5.3.0/etc/profile.d/conda.sh',
-                         'conda activate %s' % self.conda_path,
-                         'cd %s/MD_to_CVAE' % self.cwd]
-        task.executable = ['%s/bin/python' % self.conda_path]
-        task.arguments = ['%s/MD_to_CVAE/MD_to_CVAE.py' % self.cwd, 
-                          '--sim_path', self.input['BasicMD']['--sim_path']]
+        # Specify modules for python and cuda, activate conda env.
+        # Create output directory for generated files.
+        task.pre_exec = ['module load python/3.7.0-anaconda3-5.3.0',
+                         f'conda activate {self.cwd}/conda-env/',
+                         f'mkdir -p {preproc_dir}']
+
+        # Specify python preprocessing task
+        task.executable = [f'{self.cwd}/conda-env/bin/python']
+        task.arguments = [f'{self.cwd}/examples/cvae_dbscan/scripts/contact_map.py']
+
+        # Arguments for preprocessing task
+        task.arguments.extend(['--sim_path', md_dir,
+                               '--out', preproc_dir])
 
         return set(task)
