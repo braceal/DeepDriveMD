@@ -23,13 +23,13 @@ class BasicMD(TaskManager):
 
         """
         super().__init__(cpu_reqs, gpu_reqs)
+
         self.num_sims = num_sims
         self.sim_len = sim_len
-
         self.cwd = os.getcwd()
 
 
-    def task(self, sim_num, time_stamp, pipeline_id):
+    def task(self, pipeline_id, sim_num, time_stamp):
 
         # TODO: update cuda version
         # TODO: next_pdb
@@ -51,11 +51,11 @@ class BasicMD(TaskManager):
         task.arguments = [f'{self.cwd}/examples/cvae_dbscan/scripts/md.py']
 
         # Arguments for MD task
-        task.arguments.extend(['--pdb_file', next_pdb()])
-        task.arguments.extend(['--out', md_dir])
-        task.arguments.extend(['--sim_id', f'{sim_num}'])
-        task.arguments.extend(['--len', sim_len])
-        task.arguments.extend(['--sim_id', sim_num])
+        task.arguments.extend(['--pdb_file', next_pdb(),
+                               '--out', md_dir,
+                               '--sim_id', f'{sim_num}',
+                               '--len', sim_len,
+                               '--sim_id', sim_num])
 
         # Assign hardware requirements
         task.cpu_reqs = self.cpu_reqs
