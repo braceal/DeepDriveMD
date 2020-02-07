@@ -73,6 +73,6 @@ class BasicMD(TaskManager):
         """
         # TODO: incorporate or remove timestamp
         time_stamp = int(time.time())
-        return {self.task(i, time_stamp, pipeline_id) for i in range(self.num_sims)}
+        return {self.task(pipeline_id, i, time_stamp) for i in range(self.num_sims)}
 
             
