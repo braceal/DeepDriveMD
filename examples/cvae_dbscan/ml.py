@@ -24,7 +24,7 @@ class CVAE(TaskManager):
         self.cwd = os.getcwd()
 
 
-    def task(self, pipeline_id, model_id, time_stamp):
+    def _task(self, pipeline_id, model_id, time_stamp):
 
         # Specify training hyperparameters
         # Select latent dimension for CVAE [3, ... self.num_ml]
@@ -72,5 +72,5 @@ class CVAE(TaskManager):
         """
         # TODO: incorporate or remove timestamp
         time_stamp = int(time.time())
-        return {self.task(pipeline_id, i, time_stamp) for i in range(self.num_ml)}
+        return {self._task(pipeline_id, i, time_stamp) for i in range(self.num_ml)}
             

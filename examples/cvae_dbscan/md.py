@@ -29,7 +29,7 @@ class BasicMD(TaskManager):
         self.cwd = os.getcwd()
 
 
-    def task(self, pipeline_id, sim_num, time_stamp):
+    def _task(self, pipeline_id, sim_num, time_stamp):
 
         # TODO: update cuda version
         # TODO: next_pdb
@@ -73,6 +73,6 @@ class BasicMD(TaskManager):
         """
         # TODO: incorporate or remove timestamp
         time_stamp = int(time.time())
-        return {self.task(pipeline_id, i, time_stamp) for i in range(self.num_sims)}
+        return {self._task(pipeline_id, i, time_stamp) for i in range(self.num_sims)}
 
             
