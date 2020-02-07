@@ -8,9 +8,9 @@ from deepdrive.utils.validators import validate_path, validate_positive
 # TODO: change sim_id to string to encode more data
 
 @click.command()
-@click.option('-p', '--pdb', required=True,
+@click.option('-p', '--pdb', 'pdb_path' required=True,
               callback=validate_path, help='PDB file')
-@click.option('-o', '--out', required=True,
+@click.option('-o', '--out', 'out_path', required=True,
               callback=validate_path,
               help='Output directory for MD simulation data')
 @click.option('-i', '--sim_id', required=True, type=int,
@@ -30,14 +30,14 @@ from deepdrive.utils.validators import validate_path, validate_positive
 @click.option('-g', '--gpu', default=0, type=int,
               callback=validate_positive,
               help='ID of gpu to use for the simulation')
-def main(pdb, out, sim_id, topol, chk, length, report, gpu):
-    openmm_simulate_amber_fs_pep(pdb,
+def main(pdb_path, out_path, sim_id, topol, chk, length, report, gpu):
+    openmm_simulate_amber_fs_pep(pdb_path,
                                  checkpnt=chk,
                                  GPU_index=gpu,
-                                 checkpnt_fname=os.path.join(out, f'checkpnt-{sim_id}.chk'),
-                                 output_traj=os.path.join(out, f'output-{sim_id}.dcd'),
-                                 output_log=os.path.join(out, f'output-{sim_id}.log'),
-                                 output_cm=os.path.join(out, f'output-cm-{sim_id}.h5'),
+                                 checkpnt_fname=os.path.join(out_path, f'checkpnt-{sim_id}.chk'),
+                                 output_traj=os.path.join(out_path, f'output-{sim_id}.dcd'),
+                                 output_log=os.path.join(out_path, f'output-{sim_id}.log'),
+                                 output_cm=os.path.join(out_path, f'output-cm-{sim_id}.h5'),
                                  report_time=report * u.picoseconds,
                                  sim_time=length * u.nanoseconds)
 
