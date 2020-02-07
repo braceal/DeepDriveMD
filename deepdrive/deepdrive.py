@@ -16,19 +16,19 @@ class DeepDriveMD:
         Parameters
         ----------
         md_sims : list
-            list of DeepDriveMD.taskman.TaskMan objects 
+            list of DeepDriveMD.taskmanager.TaskManager objects
             which manage simulations
 
         preprocs : list
-            list of DeepDriveMD.taskman.TaskMan objects 
+            list of DeepDriveMD.taskmanager.TaskManager objects
             which manage data preprocessing
 
         ml_algs : list
-            list of DeepDriveMD.taskman.TaskMan objects 
+            list of DeepDriveMD.taskmanager.TaskManager objects
             which manage representation learning
         
         outlier_algs : list
-            list of DeepDriveMD.taskman.TaskMan objects 
+            list of DeepDriveMD.taskmanager.TaskManager objects
             which manage outlier detection
 
         resources : dict
