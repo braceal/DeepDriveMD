@@ -148,8 +148,8 @@ class DeepDriveMD:
 
         """
         if self.current_iter:
-            print('Finishing pipeline iteration {} of {}'.format(self.current_iter, 
-                                                                 self.max_iter)) 
+            print(f'Finishing pipeline iteration {self.current_iter} of {self.max_iter}')
+
         # MD stage
         s1 = self.generate_md_stage()
         self.__pipeline.add_stages(s1)
