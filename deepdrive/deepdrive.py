@@ -1,4 +1,5 @@
 import os
+from collections import namedtuple
 from radical.entk import Pipeline, Stage, Task, AppManager
 
 
@@ -54,32 +55,31 @@ class DeepDriveMD:
 
         """
 
-        # Number of iterations through the pipeline
-        self.current_iter = 0
-        self.max_iter = max_iter
-
         # TODO: Move outside of class? Maybe put in __init__.py
         #       or bash setup script
         # Set default verbosity
         if os.environ.get('RADICAL_ENTK_VERBOSE') is None:
             os.environ['RADICAL_ENTK_REPORT'] = 'True'
 
+        # Number of iterations through the pipeline
+        self.current_iter = 0
+        self.max_iter = max_iter
+
         # Initialize pipeline
         self.__pipeline = Pipeline()
         self.__pipeline.name = pipeline_name
-        self.md_stage_name = md_stage_name
-        self.pre_stage_name = pre_stage_name
-        self.ml_stage_name = ml_stage_name
-        self.outlier_stage_name = outlier_stage_name
 
-        # Set stage task managers
-        self.md_sims = md_sims
-        self.preprocs = preprocs
-        self.ml_algs = ml_algs
-        self.outlier_algs = outlier_algs
+        # Neatly stores stage name and taskmanagers
+        StageData = namedtuple('StageData', ['name', 'taskmanagers'])
+
+        # Dictionary storing name and taskmanagers for each stage
+        self.stages = {'md': StageData(md_stage_name, md_sims)
+                       'preprocess': StageData(pre_stage_name, preprocs),
+                       'ml': StageData(ml_stage_name, ml_algs),
+                       'outlier': StageData(outlier_stage_name, outlier_algs)}
 
         # Sets pipeline stages
-        self.pipeline()
+        self._pipeline()
 
         # Create Application Manager
         self.appman = AppManager(hostname=os.environ.get('RMQ_HOSTNAME'), 
@@ -90,7 +90,6 @@ class DeepDriveMD:
         # this way, all the pipelines in the list will execute concurrently.
         self.appman.workflow = [self.__pipeline]
 
-
     def run(self):
         """
         Effects
@@ -100,47 +99,20 @@ class DeepDriveMD:
         """
         self.appman.run()
 
-
-    def generate_MD_stage(self):
+    def _generate_stage(self, stage_type):
+        """
+        Parameters
+        ----------
+        stage_type : str
+            key into self.stages dictionary to retrieve stage name and taskmanagers.
+        """
         stage = Stage()
-        stage.name = self.md_stage_name
-        for sim in self.md_sims:
-            stage.add_tasks(set(sim.tasks(self.current_iter)))
+        stage.name = self.stages[stage_type].name
+        for taskman in self.stages[stage_type].taskmanagers:
+            stage.add_tasks(set(taskman.tasks(self.current_iter)))
         return stage
 
-
-    def generate_preprocess_stage(self):
-        stage = Stage()
-        stage.name = self.pre_stage_name
-        for preproc in self.preprocs:
-            stage.add_tasks(set(preproc.tasks(self.current_iter)))
-        return stage
-
-
-    def generate_ml_stage(self):
-        stage = Stage()
-        stage.name = self.ml_stage_name
-        for alg in self.ml_algs:
-            stage.add_tasks(set(alg.tasks(self.current_iter)))
-        return stage
-
-
-    def generate_outlier_stage(self):
-        stage = Stage()
-        stage.name = self.outlier_stage_name
-        for alg in self.outlier_algs:
-            stage.add_tasks(set(alg.tasks(self.current_iter)))
-
-        stage.post_exec = {
-            'condition': lambda: self.current_iter < self.max_iter,
-            'on_true': self.pipeline,
-            'on_false': lambda: print('Done')
-        }
-
-        return stage
-
-
-    def pipeline(self):
+    def _pipeline(self):
         """
         Effects
         -------
@@ -148,22 +120,22 @@ class DeepDriveMD:
 
         """
         if self.current_iter:
-            print(f'Finishing pipeline iteration {self.current_iter} of {self.max_iter}')
+            print(f'Finished pipeline iteration {self.current_iter} of {self.max_iter}')
 
-        # MD stage
-        s1 = self.generate_md_stage()
-        self.__pipeline.add_stages(s1)
+        # Add the first three stages to the pipeline
+        for stage_type in ['md', 'preprocess', 'ml']
+            self.__pipeline.add_stages(self._generate_stage(stage_type))
 
-        # Preprocess stage
-        s2 = self.generate_preprocess_stage() 
-        self.__pipeline.add_stages(s2)  
+        # Generate last stage seperate to add post execution step
+        last_stage = self._generate_stage('outlier')
 
-        # Learning stage
-        s3 = self.generate_ml_stage()
-        self.__pipeline.add_stages(s3)
+        # Set post execution for last stage
+        last_stage.post_exec = {
+            'condition': lambda: self.current_iter < self.max_iter,
+            'on_true': self._pipeline,
+            'on_false': lambda: print('Done')
+        }
 
-        # Outlier identification stage
-        s4 = self.generate_outlier_stage(settings) 
-        self.__pipeline.add_stages(s4) 
+        self.__pipeline.add_stages(last_stage)
 
         self.current_iter += 1
