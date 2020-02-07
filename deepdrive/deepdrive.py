@@ -87,8 +87,8 @@ class DeepDriveMD:
         self.appman.resource_desc = resources
 
         # Assign the workflow as a list of Pipelines to the Application Manager. In
-        # this way, all the pipelines in the list will execute concurrently.
-        self.appman.workflow = [self.__pipeline]
+        # this way, all the pipelines in the set will execute concurrently.
+        self.appman.workflow = set(self.__pipeline)
 
     def run(self):
         """
