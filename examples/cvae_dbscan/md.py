@@ -1,23 +1,19 @@
 import os
 import time
 from radical.entk import Task
-from deepdrive import TaskMan
+from deepdrive import TaskManager
 
 
-class BasicMD(TaskMan):
-    def __init__(self, task_name, num_sims, initial_len, 
-                 iter_len, cpu_reqs, gpu_reqs):
+class BasicMD(TaskManager):
+    def __init__(self, num_sims, sim_len, cpu_reqs, gpu_reqs):
         """
         Parameters
         ----------
         num_sims : int
-            number of simulations to run
+            number of MD simulations to run
 
-        initial_len : int
-            Time (ns) to run initial simulation
-
-        iter_len : int
-            Time (ns) to run iterative simulation
+        sim_len : int
+            Time (ns) to run MD simulations for
 
         cpu_reqs : dict
             contains cpu hardware requirments for task
@@ -26,69 +22,42 @@ class BasicMD(TaskMan):
             contains gpu hardware requirments for task
 
         """
-        super().__init__(task_name, cpu_reqs, gpu_reqs)
+        super().__init__(cpu_reqs, gpu_reqs)
         self.num_sims = num_sims
-        self.initial_len = initial_len
-        self.iter_len = iter_len
+        self.sim_len = sim_len
 
-        self.conda_path = '/ccs/home/hm0/.conda/envs/omm'
         self.cwd = os.getcwd()
 
-        self.initial_MD = True
-
-    def output(self):
-        """
-        Effects
-        -------
-        Defines a dictionary of output to be passed to 
-        other subscribing tasks.
-
-        Returns
-        -------
-        output dictionary
-
-        """
-        return {'--sim_path': '%s/MD_exps/fs-pep' % self.cwd}
 
     def task(self, sim_num, time_stamp):
 
-        outlier_filepath = self.input['DBSCAN']['outlier_filepath']
+        # TODO: update cuda version
+        # TODO: next_pdb
 
-        if os.path.exists(outlier_filepath): 
-            self.initial_MD = False 
-            with open(outlier_filepath, 'r') as f:
-                outlier_list = json.load(f) 
+
+        md_dir = f'{self.cwd}/data/md/pipeline-{self.pipeline_id}'
             
         task = Task()
-        task.pre_exec = ['. /sw/summit/python/2.7/anaconda2/5.3.0/etc/profile.d/conda.sh',
-                         'module load cuda/9.1.85'
-                         'conda activate %s' % self.conda_path,
-                         'export PYTHONPATH=%s/MD_exps:$PYTHONPATH' % self.cwd,
-                         'cd %s/MD_exps/fs-pep' % self.cwd,
-                         'mkdir -p omm_runs_%d && cd omm_runs_%d' % (time_stamp+sim_num, time_stamp+sim_num)]
 
-        task.executable = ['%s/bin/python' % self.conda_path]
-        task.arguments = ['%s/MD_exps/fs-pep/run_openmm.py' % self.cwd]
+        # Specify modules for python and cuda, activate conda env.
+        # Create output directory for generated files.
+        task.pre_exec = ['module load python/3.7.0-anaconda3-5.3.0',
+                         'module load cuda/9.1.85',
+                         f'conda activate {self.cwd}/conda-env/',
+                         f'mkdir -p {md_dir}']
 
-        # Pick initial point of simulation 
-        task.arguments.append('--pdb_file')
+        # Specify python MD task
+        task.executable = [f'{self.cwd}/conda-env/bin/python']
+        task.arguments = [f'{self.cwd}/examples/cvae_dbscan/scripts/md.py']
 
-        if self.initial_MD or sim_num >= len(outlier_list): 
-            task.arguments.append('%s/MD_exps/fs-pep/pdb/100-fs-peptide-400K.pdb' % self.cwd)
+        # Arguments for MD task
+        task.arguments.extend(['--pdb_file', next_pdb()])
+        task.arguments.extend(['--out', md_dir])
+        task.arguments.extend(['--sim_id', f'{sim_num}'])
+        task.arguments.extend(['--len', sim_len])
+        task.arguments.extend(['--sim_id', sim_num])
 
-        elif outlier_list[sim_num].endswith('pdb'): 
-            task.arguments.append(outlier_list[sim_num])
-            task.pre_exec.append('cp %s ./' % outlier_list[sim_num]) 
-
-        elif outlier_list[sim_num].endswith('chk'): 
-            task.arguments.extend(['%s/MD_exps/fs-pep/pdb/100-fs-peptide-400K.pdb' % self.cwd,
-                                  '-c', outlier_list[sim_num]]) 
-            task.pre_exec.append('cp %s ./' % outlier_list[sim_num])
-
-        # How long to run the simulation
-        task.arguments.extend(['--length', 
-                self.initial_len if self.initial_MD else self.iter_len])
-
+        # Assign hardware requirements
         task.cpu_reqs = self.cpu_reqs
         task.gpu_reqs = self.gpu_reqs
 
