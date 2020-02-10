@@ -11,7 +11,7 @@ if __name__ == '__main__':
     # resource, walltime, cores and project.
     # Resource is 'local.localhost' to execute locally
     resources = {
-        'resource': 'ornl.summit',
+        'resource': 'ornl.summit', # localhost
         'queue': 'batch',       # 'killable'
         'schema': 'local',
         'walltime': 60 * 2,     # 12
@@ -31,7 +31,7 @@ if __name__ == '__main__':
             'threads_per_process': 4,
             'thread_type': 'OpenMP'
         },
-        'gpu_reqs': { 
+        'gpu_reqs': {
             'processes': 1,
             'process_type': None,
             'threads_per_process': 1,
