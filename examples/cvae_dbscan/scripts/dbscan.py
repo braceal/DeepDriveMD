@@ -66,6 +66,25 @@ def perform_clustering(eps_path, encoder_weight_path, cm_embeddings, min_samples
 
     return outlier_inds, labels
 
+def write_rewarded_pdbs(rewarded_inds, sim_path, shared_path):
+    # Get list of simulation trajectory files (Assume all are equal length (ns))
+    traj_fnames = sorted(glob(os.path.join(sim_path, 'output-*.dcd')))
+
+    # Get list of simulation PDB files
+    pdb_fnames = sorted(glob(os.path.join(sim_path, 'input-*.pdb')))
+
+    # Get total number of simulations
+    sim_count = len(traj_fnames)
+
+    # Get simulation indices and frame number coresponding to outliers
+    reward_locs = map(lambda outlier: divmod(sim_count, outlier), rewarded_inds)
+
+    for sim_id, frame in reward_locs:
+        pdb_fname = os.path.join(shared_path, f'outlier-{sim_id}-{frame}.pdb')
+        mda_traj = mda.Universe(pdb_fnames[sim_id], traj_fnames[sim_id])
+        pdb = mda.Writer(pdb_fname)
+        pdb.write(mda_traj[frame].atoms)
+
 
 @click.command()
 @click.option('-i', '--sim_path', required=True,
@@ -118,28 +137,9 @@ def main(sim_path, shared_path, cm_path, cvae_path,
     outlier_inds, labels = perform_clustering(eps_path, encoder_weight_path,
                                               cm_embeddings, min_samples)
 
-    # TODO: put in shared folder
+    # Write rewarded PDB files to shared path
+    write_rewarded_pdbs(outlier_inds, sim_path, shared_path)
 
-    # Get list of current outlier pdb files
-    outlier_pdb_fnames = sorted(glob(os.path.join(shared_path, 'outlier-*.pdb')))
-
-    # Get list of simulation trajectory files (Assume all are equal length (ns))
-    traj_fnames = sorted(glob(os.path.join(sim_path, 'output-*.dcd')))
-
-    # Get list of simulation PDB files 
-    pdb_fnames = sorted(glob(os.path.join(sim_path, 'input-*.pdb')))
-
-    # Get total number of simulations
-    sim_count = len(traj_fnames)
-
-    # Get simulation indices and frame number coresponding to outliers
-    outlier_indices = map(lambda outlier: divmod(sim_count, outlier), outlier_inds)
-
-    for sim_id, frame in outlier_indices:
-        pdb_fname = os.path.join(shared_path, f'outlier-{sim_id}-{frame}.pdb')
-        mda_traj = mda.Universe(pdb_fnames[sim_id], traj_fnames[sim_id])
-        pdb = mda.Writer(pdb_fname)
-        pdb.write(mda_traj[frame].atoms)
 
 
 if __name__ == '__main__':
