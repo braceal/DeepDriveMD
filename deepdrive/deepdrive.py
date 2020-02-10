@@ -82,7 +82,7 @@ class DeepDriveMD:
         self._pipeline()
 
         # Create Application Manager
-        self.appman = AppManager(hostname=os.environ.get('RMQ_HOSTNAME'), 
+        self.appman = AppManager(hostname=os.environ.get('RMQ_HOSTNAME'),
                                  port=int(os.environ.get('RMQ_PORT')))
         self.appman.resource_desc = resources
 
@@ -123,7 +123,7 @@ class DeepDriveMD:
             print(f'Finished pipeline iteration {self.current_iter} of {self.max_iter}')
 
         # Add the first three stages to the pipeline
-        for stage_type in ['md', 'preprocess', 'ml']
+        for stage_type in ['md', 'preprocess', 'ml']:
             self.__pipeline.add_stages(self._generate_stage(stage_type))
 
         # Generate last stage seperate to add post execution step
