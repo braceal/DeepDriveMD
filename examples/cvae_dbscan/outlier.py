@@ -29,7 +29,7 @@ class DBSCAN(TaskManager):
         """
         md_dir = f'{self.cwd}/data/md/pipeline-{pipeline_id}'
         cvae_dir = f'{self.cwd}/data/ml/pipeline-{pipeline_id}'
-        shared_dir = f'{self.cwd}/data/shared/pipeline-{pipeline_id + 1}'
+        shared_dir = f'{self.cwd}/data/shared/pipeline-{pipeline_id + 1}/pdb'
         preproc_dir = f'{self.cwd}/data/preproc/pipeline-{pipeline_id}'
         cm_data_path = f'{self.cwd}/data/preproc/pipeline-{pipeline_id}/cvae-input.h5'
 
