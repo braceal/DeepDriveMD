@@ -73,7 +73,7 @@ class DeepDriveMD:
         StageData = namedtuple('StageData', ['name', 'taskmanagers'])
 
         # Dictionary storing name and taskmanagers for each stage
-        self.stages = {'md': StageData(md_stage_name, md_sims)
+        self.stages = {'md': StageData(md_stage_name, md_sims),
                        'preprocess': StageData(pre_stage_name, preprocs),
                        'ml': StageData(ml_stage_name, ml_algs),
                        'outlier': StageData(outlier_stage_name, outlier_algs)}
