@@ -28,6 +28,8 @@ class BasicMD(TaskManager):
         self.sim_len = sim_len
         self.cwd = os.getcwd()
 
+        self.initial = True
+
 
     def _task(self, pipeline_id, sim_num, time_stamp):
 
