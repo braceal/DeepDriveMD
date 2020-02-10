@@ -57,14 +57,14 @@ def perform_clustering(eps_path, encoder_weight_path, cm_embeddings, min_samples
     if best_eps:
         eps = best_eps
 
-    eps, outlier_inds = dbscan_clustering(cm_embeddings, eps, min_samples)
+    eps, outlier_inds, labels = dbscan_clustering(cm_embeddings, eps, min_samples)
     eps_record[encoder_weight_path] = eps
 
     # Save the eps for next round of the pipeline
     with open(eps_path, 'w') as file:
         json.dump(eps_record, file)
 
-    return outlier_inds
+    return outlier_inds, labels
 
 
 @click.command()
@@ -111,31 +111,19 @@ def main(sim_path, shared_path, cm_path, cvae_path,
     encoder_weight_path = os.path.join(cvae_path, f'encoder-weight-{best_model_id}.h5')
 
     # Generate embeddings for all contact matrices produced during MD stage
-    cm_embeddings = generate_embeddings(encoder_hparams_path, encoder_weight_path, cm_path)
+    cm_embeddings = generate_embeddings(encoder_hparams_path, 
+                                        encoder_weight_path, cm_path)
 
-    outlier_inds = perform_clustering(eps_path, encoder_weight_path, cm_embeddings, min_samples)
+    # Performs DBSCAN clustering on embeddings
+    outlier_inds, labels = perform_clustering(eps_path, encoder_weight_path,
+                                              cm_embeddings, min_samples)
 
     # TODO: put in shared folder
-    # TODO: put rmsd to native state in fname to parallelize greedy 
-    #       search for low rmsd conformations to spawn new simulations.
+
     # Get list of current outlier pdb files
     outlier_pdb_fnames = sorted(glob(os.path.join(shared_path, 'outlier-*.pdb')))
 
-    # Remove old pdb outliers that are now inside a cluster
-    for pdb_fname in outlier_pdb_fnames:
-        # Read atoms and coordinates from PDB and select carbon-alpha atoms
-        ca = Universe(pdb_fname).select_atoms('name CA')
-        # Compute contact matrix
-        cm_matrix = (distances.self_distance_array(ca.positions) < 8.0) * 1.0
-        # Use autoecoder to generate embedding of contact matrix
-        embedding = encoder.embed(cm_matrix)
-        # Cluster embedded contact matrix
-        cluster_labels = db.fit_predict(embedding)
-        # If PDB is not an outlier, remove it from waiting list
-        if cluster_labels[0] != -1:
-            os.remove(pdb_fname)
-
-    # Get list of simulation trajectory files (Assume all are equal length)
+    # Get list of simulation trajectory files (Assume all are equal length (ns))
     traj_fnames = sorted(glob(os.path.join(sim_path, 'output-*.dcd')))
 
     # Get list of simulation PDB files 
@@ -145,7 +133,7 @@ def main(sim_path, shared_path, cm_path, cvae_path,
     sim_count = len(traj_fnames)
 
     # Get simulation indices and frame number coresponding to outliers
-    outlier_indices = map(lambda outlier: divmod(sim_count, outlier), outliers)
+    outlier_indices = map(lambda outlier: divmod(sim_count, outlier), outlier_inds)
 
     for sim_id, frame in outlier_indices:
         pdb_fname = os.path.join(shared_path, f'outlier-{sim_id}-{frame}.pdb')
