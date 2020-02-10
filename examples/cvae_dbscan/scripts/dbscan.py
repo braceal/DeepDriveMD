@@ -5,8 +5,8 @@ import numpy as np
 from glob import glob
 import MDAnalysis as mda
 from MDAnalysis.analysis import distances
-from sklearn.cluster import DBSCAN
 from molecules.utils import open_h5
+from molecules.ml.unsupervised.cluster import dbscan_clustering
 from molecules.ml.unsupervised import (VAE, EncoderConvolution2D, 
                                        DecoderConvolution2D,
                                        EncoderHyperparams,
@@ -15,6 +15,56 @@ from deepdrive.utils import get_id
 from deepdrive.utils.validators import (validate_path, 
                                         validate_positive,
                                         validate_between_zero_and_one)
+
+
+def generate_embeddings(encoder_hparams_path, encoder_weight_path, cm_path):
+    encoder_hparams = EncoderHyperparams.load(encoder_hparams_path)
+
+    with open_h5(cm_path) as file:
+
+        # Access contact matrix data from h5 file
+        data = file['contact_maps']
+
+        # Get shape of an individual contact matrix
+        # (ignore total number of matrices)
+        input_shape = data.shape[1:]
+
+        encoder = EncoderConvolution2D(input_shape=input_shape,
+                                       hyperparameters=encoder_hparams)
+
+        # Load best model weights
+        encoder.load_weights(encoder_weight_path)
+
+        # Create contact matrix embeddings
+        cm_embeddings, *_ = encoder.embed(data)
+
+    return cm_embeddings
+
+def perform_clustering(eps_path, encoder_weight_path, cm_embeddings, min_samples):
+
+    # If previous epsilon values have been calculated, load the record from disk.
+    # eps_record stores a dictionary from cvae_weight path which uniquely identifies
+    # a model, to the epsilon value previously calculated for that model.
+    with open(eps_path) as file:
+        try:
+            eps_record = json.load(file)
+        except json.decoder.JSONDecodeError:
+            eps_record = {}
+
+    best_eps = eps_record.get(encoder_weight_path)
+
+    # If eps_record contains previous eps value then use it, otherwise use default.
+    if best_eps:
+        eps = best_eps
+
+    eps, outlier_inds = dbscan_clustering(cm_embeddings, eps, min_samples)
+    eps_record[encoder_weight_path] = eps
+
+    # Save the eps for next round of the pipeline
+    with open(eps_path, 'w') as file:
+        json.dump(eps_record, file)
+
+    return outlier_inds
 
 
 @click.command()
@@ -56,65 +106,14 @@ def main(sim_path, shared_path, cm_path, cvae_path,
     best_model_id = get_id(min(glob(os.path.join(cvae_path, 'val-loss-*.npy')),
                                key=lambda loss_path: np.load(loss_path)[-1]), 'npy')
 
-
-    # Define paths to best model hyperparameters
+    # Define paths to best model and hyperparameters
     encoder_hparams_path = os.path.join(cvae_path, f'encoder-hparams-{best_model_id}.pkl')
-
     encoder_weight_path = os.path.join(cvae_path, f'encoder-weight-{best_model_id}.h5')
 
-    encoder_hparams = EncoderHyperparams.load(encoder_hparams_path)
+    # Generate embeddings for all contact matrices produced during MD stage
+    cm_embeddings = generate_embeddings(encoder_hparams_path, encoder_weight_path, cm_path)
 
-    with open_h5(cm_path) as file:
-
-        # Access contact matrix data from h5 file
-        data = file['contact_maps']
-
-        # Get shape of an individual contact matrix 
-        # (ignore total number of matrices)
-        input_shape = data.shape[1:]
-
-        encoder = EncoderConvolution2D(input_shape=input_shape,
-                                       hyperparameters=encoder_hparams)
-
-        # Load best model weights
-        encoder.load_weights(encoder_weight_path)
-
-        # Create contact matrix embeddings
-        cm_embeddings, *_ = encoder.embed(data)
-
-    # If previous epsilon values have been calculated, load the record from disk.
-    # eps_record stores a dictionary from cvae_weight path which uniquely identifies
-    # a model, to the epsilon value previously calculated for that model.
-    with open(eps_path) as file:
-        try:
-            eps_record = json.load(file)
-        except json.decoder.JSONDecodeError:
-            eps_record = {}
-
-    best_eps = eps_record.get(encoder_weight_path)
-
-    # If eps_record contains previous eps value then use it, otherwise use default.
-    if best_eps:
-        eps = best_eps
-
-    # Search for right eps for DBSCAN 
-    while True:
-        # Run DBSCAN clustering on contact matrix embeddings
-        db = DBSCAN(eps=eps, min_samples=min_samples).fit(cm_embeddings)
-        # Array of outlier indices in latent space
-        outliers = np.flatnonzero(db.labels_ == -1)
-
-        # If the number of outliers is greater than 150, update eps.
-        # Each CVAE model has a different optimal eps.
-        if len(outliers) > 150:
-            eps = eps + 0.05
-        else: 
-            eps_record[encoder_weight_path] = eps
-            break
-
-    # Save the eps for next round of pipeline
-    with open(eps_path, 'w') as file:
-        json.dump(eps_record, file)
+    outlier_inds = perform_clustering(eps_path, encoder_weight_path, cm_embeddings, min_samples)
 
     # TODO: put in shared folder
     # TODO: put rmsd to native state in fname to parallelize greedy 
@@ -146,7 +145,7 @@ def main(sim_path, shared_path, cm_path, cvae_path,
     sim_count = len(traj_fnames)
 
     # Get simulation indices and frame number coresponding to outliers
-    outlier_indices = map(lambda outlier : divmod(sim_count, outlier), outliers)
+    outlier_indices = map(lambda outlier: divmod(sim_count, outlier), outliers)
 
     for sim_id, frame in outlier_indices:
         pdb_fname = os.path.join(shared_path, f'outlier-{sim_id}-{frame}.pdb')
