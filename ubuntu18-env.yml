@@ -1,0 +1,28 @@
+name: null                          # Our env was made with --prefix
+channels:
+  - conda-forge                     # We added a third party channel
+  - pytorch
+  - defaults
+dependencies:
+  - pip=19.3.1=py37_0
+  - numpy
+  - scipy
+  - h5py
+  - tqdm
+  - swig
+  - pip:                            # Packages installed from PyPI
+    # - molecules>=0.0.3.2
+    - ParmEd==3.2.0
+    - simtk.unit==0.2
+    - tensorflow==1.15
+    - Keras==2.3.1
+    - scikit-learn==0.22.1
+    - MDAnalysis==0.20.1
+    - tables==3.6.1
+    - click==7.0
+    - radical.entk==1.0.0
+    - pycodestyle==2.5.0
+    - pydocstyle==4.0.1
+    - pylint==2.3.1
+    - pytest==5.1.2
+    - -e .
