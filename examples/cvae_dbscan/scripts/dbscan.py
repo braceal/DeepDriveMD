@@ -6,7 +6,7 @@ from glob import glob
 import MDAnalysis as mda
 from MDAnalysis.analysis import distances
 from molecules.utils import open_h5
-from molecules.ml.unsupervised.cluster import dbscan_clustering
+from molecules.ml.unsupervised.cluster import optics_clustering
 from molecules.ml.unsupervised import (VAE, EncoderConvolution2D, 
                                        DecoderConvolution2D,
                                        EncoderHyperparams,
@@ -40,7 +40,7 @@ def generate_embeddings(encoder_hparams_path, encoder_weight_path, cm_path):
 
     return cm_embeddings
 
-def perform_clustering(eps_path, encoder_weight_path, cm_embeddings, min_samples):
+def perform_clustering(eps_path, encoder_weight_path, cm_embeddings, min_samples, eps):
 
     # If previous epsilon values have been calculated, load the record from disk.
     # eps_record stores a dictionary from cvae_weight path which uniquely identifies
@@ -57,7 +57,7 @@ def perform_clustering(eps_path, encoder_weight_path, cm_embeddings, min_samples
     if best_eps:
         eps = best_eps
 
-    eps, outlier_inds, labels = dbscan_clustering(cm_embeddings, eps, min_samples)
+    outlier_inds, labels = optics_clustering(cm_embeddings, min_samples)
     eps_record[encoder_weight_path] = eps
 
     # Save the eps for next round of the pipeline
@@ -77,13 +77,19 @@ def write_rewarded_pdbs(rewarded_inds, sim_path, shared_path):
     sim_count = len(traj_fnames)
 
     # Get simulation indices and frame number coresponding to outliers
-    reward_locs = map(lambda outlier: divmod(sim_count, outlier), rewarded_inds)
+    reward_locs = list(map(lambda outlier: divmod(outlier, sim_count), rewarded_inds))
 
-    for sim_id, frame in reward_locs:
+    # For documentation on mda.Writer methods see:
+    #   https://www.mdanalysis.org/mdanalysis/documentation_pages/coordinates/PDB.html
+    #   https://www.mdanalysis.org/mdanalysis/_modules/MDAnalysis/coordinates/PDB.html#PDBWriter._update_frame
+
+    for frame, sim_id in reward_locs:
         pdb_fname = os.path.join(shared_path, f'outlier-{sim_id}-{frame}.pdb')
-        mda_traj = mda.Universe(pdb_fnames[sim_id], traj_fnames[sim_id])
-        pdb = mda.Writer(pdb_fname)
-        pdb.write(mda_traj[frame].atoms)
+        u = mda.Universe(pdb_fnames[sim_id], traj_fnames[sim_id])
+        with mda.Writer(pdb_fname) as writer:
+            # Write a single coordinate set to a PDB file
+            writer._update_frame(u)
+            writer._write_timestep(u.trajectory[frame])
 
 
 @click.command()
@@ -135,7 +141,7 @@ def main(sim_path, shared_path, cm_path, cvae_path,
 
     # Performs DBSCAN clustering on embeddings
     outlier_inds, labels = perform_clustering(eps_path, encoder_weight_path,
-                                              cm_embeddings, min_samples)
+                                              cm_embeddings, min_samples, eps)
 
     # Write rewarded PDB files to shared path
     write_rewarded_pdbs(outlier_inds, sim_path, shared_path)
