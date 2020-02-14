@@ -41,6 +41,8 @@ def generate_embeddings(encoder_hparams_path, encoder_weight_path, cm_path):
     return cm_embeddings
 
 def perform_clustering(eps_path, encoder_weight_path, cm_embeddings, min_samples, eps):
+    # TODO: if we decide on OPTICS clustering, then remove all eps code
+
 
     # If previous epsilon values have been calculated, load the record from disk.
     # eps_record stores a dictionary from cvae_weight path which uniquely identifies
