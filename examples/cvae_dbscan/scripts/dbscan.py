@@ -148,7 +148,5 @@ def main(sim_path, shared_path, cm_path, cvae_path,
     # Write rewarded PDB files to shared path
     write_rewarded_pdbs(outlier_inds, sim_path, shared_path)
 
-
-
 if __name__ == '__main__':
     main()

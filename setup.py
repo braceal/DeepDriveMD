@@ -1,7 +1,5 @@
 from setuptools import setup, find_packages
 
-# TODO: add python3 radical.entk dependency
-
 setup(
     name='deepdrive',
     version='0.1.0',
