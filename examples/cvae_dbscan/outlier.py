@@ -38,6 +38,7 @@ class DBSCAN(TaskManager):
         # Create output directory for generated files.
         task.pre_exec = ['module load python/3.7.0-anaconda3-5.3.0',
                          'module load cuda/9.1.85',
+                         '. /sw/summit/python/3.7/anaconda3/5.3.0/etc/profile.d/conda.sh',
                          f'conda activate {self.cwd}/conda-env/',
                          f'mkdir -p {outlier_dir}',
                          f'mkdir -p {shared_path}']

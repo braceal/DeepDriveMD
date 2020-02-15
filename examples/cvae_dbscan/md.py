@@ -49,6 +49,7 @@ class BasicMD(TaskManager):
         # Create output directory for generated files.
         task.pre_exec = ['module load python/3.7.0-anaconda3-5.3.0',
                          'module load cuda/9.1.85',
+                         '. /sw/summit/python/3.7/anaconda3/5.3.0/etc/profile.d/conda.sh', 
                          f'conda activate {self.cwd}/conda-env/',
                          f'mkdir -p {md_dir}',
                          f'cp {self.next_pdb(shared_dir)} {pdb_file}']
