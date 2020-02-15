@@ -59,7 +59,7 @@ def perform_clustering(eps_path, encoder_weight_path, cm_embeddings, min_samples
     if best_eps:
         eps = best_eps
 
-    outlier_inds, labels = optics_clustering(cm_embeddings, min_samples)
+    eps, outlier_inds, labels = dbscan_clustering(cm_embeddings, eps, min_samples)
     eps_record[encoder_weight_path] = eps
 
     # Save the eps for next round of the pipeline
@@ -79,7 +79,7 @@ def write_rewarded_pdbs(rewarded_inds, sim_path, shared_path):
     sim_count = len(traj_fnames)
 
     # Get simulation indices and frame number coresponding to outliers
-    reward_locs = list(map(lambda outlier: divmod(outlier, sim_count), rewarded_inds))
+    reward_locs = map(lambda outlier: divmod(outlier, sim_count), rewarded_inds)
 
     # For documentation on mda.Writer methods see:
     #   https://www.mdanalysis.org/mdanalysis/documentation_pages/coordinates/PDB.html
@@ -107,20 +107,19 @@ def write_rewarded_pdbs(rewarded_inds, sim_path, shared_path):
 @click.option('-c', '--cvae_path', required=True,
               callback=validate_path,
               help='CVAE model directory path')
-@click.option('-e', '--eps_path', required=True,
-              callback=validate_path,
-              help='Path to eps record for DBSCAN. Empty files are valid.')
-@click.option('-E', '--eps', default=0.2, type=float,
-              callback=validate_between_zero_and_one,
-              help='Value of eps in the DBSCAN algorithm')
+# @click.option('-e', '--eps_path', required=True,
+#               callback=validate_path,
+#               help='Path to eps record for DBSCAN. Empty files are valid.')
+# @click.option('-E', '--eps', default=0.2, type=float,
+#               callback=validate_between_zero_and_one,
+#               help='Value of eps in the DBSCAN algorithm')
 @click.option('-m', '--min_samples', default=10, type=int,
               callback=validate_positive,
               help='Value of min_samples in the DBSCAN algorithm')
 @click.option('-g', '--gpu', default=0, type=int,
               callback=validate_positive,
               help='GPU id')
-def main(sim_path, shared_path, cm_path, cvae_path,
-         eps_path, eps, min_samples, gpu):
+def main(sim_path, shared_path, cm_path, cvae_path, min_samples, gpu):
 
     # Set CUDA environment variables
     os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
@@ -142,8 +141,12 @@ def main(sim_path, shared_path, cm_path, cvae_path,
                                         encoder_weight_path, cm_path)
 
     # Performs DBSCAN clustering on embeddings
-    outlier_inds, labels = perform_clustering(eps_path, encoder_weight_path,
-                                              cm_embeddings, min_samples, eps)
+    #outlier_inds, labels = perform_clustering(eps_path, encoder_weight_path,
+    #                                          cm_embeddings, min_samples, eps)
+
+    # Performs OPTICS clustering on embeddings
+    outlier_inds, labels = optics_clustering(cm_embeddings, min_samples)
+
 
     # Write rewarded PDB files to shared path
     write_rewarded_pdbs(outlier_inds, sim_path, shared_path)
