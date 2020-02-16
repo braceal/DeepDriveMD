@@ -19,9 +19,9 @@ cd DeepDriveMD/
 
 module load python/3.7.0-anaconda3-5.3.0
 . /sw/summit/python/3.7/anaconda3/5.3.0/etc/profile.d/conda.sh
-conda env create python=3.7 -p ./conda-env -f environment.yml
+conda env create python=3.7 -p ./conda-env -f summit-env.yml
 conda activate ./conda-env
-#conda install -p ./conda-env -c omnia openmm-setup
+conda install --yes -c omnia-dev/label/cuda101 openmm
 #conda install pytorch torchvision cpuonly -c pytorch
 ```
 

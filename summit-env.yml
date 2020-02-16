@@ -1,7 +1,7 @@
 name: null                          # Our env was made with --prefix
 channels:
   - conda-forge                     # We added a third party channel
-  #- omnia
+  - omnia
   - defaults
 dependencies:
   - pip=10.0.1=py37_0
