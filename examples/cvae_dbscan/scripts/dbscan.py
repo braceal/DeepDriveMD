@@ -98,27 +98,35 @@ def write_rewarded_pdbs(rewarded_inds, sim_path, shared_path):
 @click.option('-i', '--sim_path', required=True,
               callback=validate_path,
               help='OpenMM simulation path containing *.dcd and *.pdb files')
+
 @click.option('-s', '--shared_path', required=True,
               callback=validate_path,
               help='Path to folder shared between outlier and MD stages.')
+
 @click.option('-d', '--cm_path', required=True,
               callback=validate_path,
               help='Preprocessed cvae-input h5 file path')
+
 @click.option('-c', '--cvae_path', required=True,
               callback=validate_path,
               help='CVAE model directory path')
+
 # @click.option('-e', '--eps_path', required=True,
 #               callback=validate_path,
 #               help='Path to eps record for DBSCAN. Empty files are valid.')
+
 # @click.option('-E', '--eps', default=0.2, type=float,
 #               callback=validate_between_zero_and_one,
 #               help='Value of eps in the DBSCAN algorithm')
+
 @click.option('-m', '--min_samples', default=10, type=int,
               callback=validate_positive,
               help='Value of min_samples in the DBSCAN algorithm')
+
 @click.option('-g', '--gpu', default=0, type=int,
               callback=validate_positive,
               help='GPU id')
+
 def main(sim_path, shared_path, cm_path, cvae_path, min_samples, gpu):
 
     # Set CUDA environment variables
@@ -130,7 +138,8 @@ def main(sim_path, shared_path, cm_path, cvae_path, min_samples, gpu):
     # Find the minimum validation loss by taking the model_id associated with
     # the smallest validation loss during the last epoch. 
     best_model_id = get_id(min(glob(os.path.join(cvae_path, 'val-loss-*.npy')),
-                               key=lambda loss_path: np.load(loss_path)[-1]), 'npy')
+                               key=lambda loss_path: np.load(loss_path)[-1]),
+                           'val-loss-','npy')
 
     # Define paths to best model and hyperparameters
     encoder_hparams_path = os.path.join(cvae_path, f'encoder-hparams-{best_model_id}.pkl')

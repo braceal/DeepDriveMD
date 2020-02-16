@@ -4,7 +4,6 @@ import click
 from glob import glob
 from contextlib import ExitStack
 from molecules.utils import open_h5
-from deepdrive.utils import get_id
 from deepdrive.preproc import cm_to_cvae
 from deepdrive.utils.validators import validate_path
 
@@ -13,16 +12,18 @@ from deepdrive.utils.validators import validate_path
 @click.option('-i', '--sim_path', required=True,
               callback=validate_path,
               help='OpenMM simulation path containing output-cm-*.h5 files')
+
 @click.option('-o', '--out', required=True,
               callback=validate_path,
               help='2D contact map h5 file')
+
 def main(sim_path, out):
 
     # Define wildcard path to contact matrix data
     cm_filepath = os.path.join(sim_path, 'output-cm-*.h5')
 
     # Collect contact matrix file names sorted by sim_id
-    cm_files = sorted(glob(cm_filepath), key=get_id)
+    cm_files = sorted(glob(cm_filepath))
 
     if not cm_files: 
         raise FileNotFoundError(f'No h5 files found, recheck your input path {sim_path}')
