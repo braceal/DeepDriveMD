@@ -16,24 +16,30 @@ from deepdrive.utils.validators import validate_path, validate_positive
 @click.option('-i', '--input', 'input_path', required=True,
               callback=validate_path,
               help='Path to file containing preprocessed contact matrix data')
+
 @click.option('-o', '--out', 'out_path', required=True,
               callback=validate_path,
               help='Output directory for model data')
-@click.option('-m', '--model_id', required=True, type=int,
-              callback=validate_positive,
-              help='Model ID in pipeline [0...N]')
+
+@click.option('-m', '--model_id', required=True,
+              help='Model ID in for file naming')
+
 @click.option('-g', '--gpu', default=0, type=int,
               callback=validate_positive,
               help='GPU id')
+
 @click.option('-e', '--epochs', default=100, type=int,
               callback=validate_positive,
               help='Number of epochs to train for')
+
 @click.option('-b', '--batch_size', default=512, type=int,
               callback=validate_positive,
               help='Batch size for training')
+
 @click.option('-d', '--latent_dim', default=3, type=int,
               callback=validate_positive,
               help='Number of dimensions in latent space')
+
 def main(input_path, out_path, model_id, gpu, epochs, batch_size, latent_dim):
 
     # Set CUDA environment variables
