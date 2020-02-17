@@ -4,20 +4,24 @@ channels:
   - omnia
   - defaults
 dependencies:
-  - pip=10.0.1=py37_0
+  - pip=18.1=py36_0
+  - tensorflow-gpu
+  - keras-gpu
   - numpy
   - scipy
+  - scikit-learn
   - swig
   - cython
-  #- openmm
-  #- opencv
-  #- gym
+  - h5py
+  - tqdm
+  - click
+  - pycodestyle
+  - pydocstyle
+  - pylint
+  - pytest
   - pip:                            # Packages installed from PyPI
-    #- ParmEd==3.2.0
-    #- simtk.unit==0.2
-    #- click==7.0
-    #- pycodestyle==2.5.0
-    #- pydocstyle==4.0.1
-    #- pylint==2.3.1
-    #- pytest==5.1.2
-    #- -e .
+    - ParmEd==3.2.0
+    - MDAnalysis==0.20.1
+    - tables==3.6.1
+    - radical.entk==1.0.0
+    - -e .
