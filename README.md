@@ -55,7 +55,7 @@ SWIG_EXECUTABLE        /<path-from-root>/DeepDriveMD/conda-env/bin/swig
 ```
 
 Continue to configure until there are no remaining errors, then generate.
-Note: make sure to double check the settings, especially MAKE_INSTALL_PREFIX after
+Note: make sure to double check the settings, especially MAKE_INSTALL_PREFIX, after
       configuring for the first time and once again after generation.
 
 Steps to compile (Run from build_openmm directory):
