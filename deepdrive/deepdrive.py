@@ -54,12 +54,8 @@ class DeepDriveMD:
             Name of outlier detection stage
 
         """
-
-        # TODO: Move outside of class? Maybe put in __init__.py
-        #       or bash setup script
-        # Set default verbosity
-        if os.environ.get('RADICAL_ENTK_VERBOSE') is None:
-            os.environ['RADICAL_ENTK_REPORT'] = 'True'
+        # Checks environment variables are set
+        self._validate_environment()
 
         # Number of iterations through the pipeline
         self.current_iter = 0
@@ -99,6 +95,17 @@ class DeepDriveMD:
         """
         self.appman.run()
 
+    def _validate_environment():
+        if not os.environ.get('RADICAL_ENTK_VERBOSE'):
+            os.environ['RADICAL_ENTK_REPORT'] = 'True'
+
+        # All envars must be set prior
+        envars = ['RMQ_HOSTNAME', 'RMQ_PORT', 'RADICAL_PILOT_DBURL',
+                  'RADICAL_PILOT_PROFILE', 'RADICAL_ENTK_PROFILE']
+        for envar in envars:
+            if not os.environ.get(envar):
+                raise Exception(f'{envar} environment variable not set')
+        
     def _generate_stage(self, stage_type):
         """
         Parameters

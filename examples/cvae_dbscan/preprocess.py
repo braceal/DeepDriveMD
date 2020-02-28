@@ -36,6 +36,7 @@ class ContactMatrix(TaskManager):
         # Specify modules for python and cuda, activate conda env.
         # Create output directory for generated files.
         task.pre_exec = ['module load python/3.7.0-anaconda3-5.3.0',
+                         '. /sw/summit/python/3.7/anaconda3/5.3.0/etc/profile.d/conda.sh',
                          f'conda activate {self.cwd}/conda-env/',
                          f'mkdir -p {preproc_dir}']
 
