@@ -5,8 +5,9 @@ from radical.entk import Task
 from deepdrive import TaskManager
 
 
-class BasicMD(TaskManager):
-    def __init__(self, num_sims, sim_len, initial_sim_len, cpu_reqs, gpu_reqs):
+class MDTaskManager(TaskManager):
+    def __init__(self, num_sims, sim_len, initial_sim_len,
+                 cpu_reqs={}, gpu_reqs={}, cwd=os.getcwd()):
         """
         Parameters
         ----------
@@ -25,47 +26,38 @@ class BasicMD(TaskManager):
         gpu_reqs : dict
             contains gpu hardware requirments for task
 
+        cwd : str
+            path from root to /DeepDriveMD directory
+
         """
-        super().__init__(cpu_reqs, gpu_reqs)
+        super().__init__(cpu_reqs, gpu_reqs, cwd)
 
         self.num_sims = num_sims
         self.sim_len = sim_len
         self.initial_sim_len = initial_sim_len
-        self.cwd = os.getcwd()
 
     def _task(self, pipeline_id, sim_num, time_stamp, md_dir, shared_dir, incomming_pbds):
-
-        # TODO: update cuda version
 
         pdb_file = os.path.join(md_dir, f'input-{sim_num}.pdb')
             
         task = Task()
 
-        # Specify modules for python and cuda, activate conda env.
+        self.load_environment(task)
+        self.set_python_executable(task)
+        self.assign_hardware(task)
+
         # Create output directory for generated files.
-        task.pre_exec = ['module load python/3.7.0-anaconda3-5.3.0',
-                         'module load cuda/9.1.85',
-                         '. /sw/summit/python/3.7/anaconda3/5.3.0/etc/profile.d/conda.sh', 
-                         f'conda activate {self.cwd}/conda-env/',
-                         f'mkdir -p {md_dir}',
-                         f'cp {incomming_pbds[sim_num]} {pdb_file}']
+        task.pre_exec.extend([f'mkdir -p {md_dir}',
+                              f'cp {incomming_pbds[sim_num]} {pdb_file}'])
 
-        # Specify python MD task
-        task.executable = [f'{self.cwd}/conda-env/bin/python']
-        task.arguments = [f'{self.cwd}/examples/cvae_dbscan/scripts/md.py']
-
-        # Arguments for MD task
-        task.arguments.extend(['--pdb', pdb_file,
-                               '--out', md_dir,
-                               '--sim_id', str(sim_num),
-                               '--len', str(self.sim_len if pipeline_id else self.initial_sim_len)])
-
-        # Specify hardware requirements
-        task.cpu_reqs = self.cpu_reqs
-        task.gpu_reqs = self.gpu_reqs
+        # Specify python MD task with arguments
+        task.arguments = [f'{self.cwd}/examples/cvae_dbscan/scripts/md.py',
+                          '--pdb', pdb_file,
+                          '--out', md_dir,
+                          '--sim_id', str(sim_num),
+                          '--len', str(self.sim_len if pipeline_id else self.initial_sim_len)]
 
         return task
-
 
     def tasks(self, pipeline_id):
         """

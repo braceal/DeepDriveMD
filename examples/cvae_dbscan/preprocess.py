@@ -3,8 +3,8 @@ from radical.entk import Task
 from deepdrive import TaskManager
 
 
-class ContactMatrix(TaskManager):
-    def __init__(self, cpu_reqs, gpu_reqs):
+class ContactMatrixTaskManager(TaskManager):
+    def __init__(self, cpu_reqs={}, gpu_reqs={}, cwd=os.getcwd()):
         """
         Parameters
         ----------
@@ -14,12 +14,13 @@ class ContactMatrix(TaskManager):
         gpu_reqs : dict
             contains gpu hardware requirments for task
 
+        cwd : str
+            path from root to /DeepDriveMD directory
+
         Note: both cpu_reqs, gpu_reqs are empty.
 
         """
-        super().__init__(cpu_reqs, gpu_reqs)
-
-        self.cwd = os.getcwd()
+        super().__init__(cpu_reqs, gpu_reqs, cwd)
 
     def tasks(self, pipeline_id):
         """
@@ -33,19 +34,16 @@ class ContactMatrix(TaskManager):
         
         task = Task()
 
-        # Specify modules for python and cuda, activate conda env.
+        self.load_environment(task)
+        self.set_python_executable(task)
+        self.assign_hardware(task)
+
         # Create output directory for generated files.
-        task.pre_exec = ['module load python/3.7.0-anaconda3-5.3.0',
-                         '. /sw/summit/python/3.7/anaconda3/5.3.0/etc/profile.d/conda.sh',
-                         f'conda activate {self.cwd}/conda-env/',
-                         f'mkdir -p {preproc_dir}']
+        task.pre_exec.extend([f'mkdir -p {preproc_dir}'])
 
-        # Specify python preprocessing task
-        task.executable = [f'{self.cwd}/conda-env/bin/python']
-        task.arguments = [f'{self.cwd}/examples/cvae_dbscan/scripts/contact_map.py']
+        # Specify python preprocessing task with arguments
+        task.arguments = [f'{self.cwd}/examples/cvae_dbscan/scripts/contact_map.py',
+                          '--sim_path', md_dir,
+                          '--out', preproc_dir]
 
-        # Arguments for preprocessing task
-        task.arguments.extend(['--sim_path', md_dir,
-                               '--out', preproc_dir])
-
-        return set(task)
+        return {task}

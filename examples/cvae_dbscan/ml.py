@@ -1,10 +1,11 @@
 import os
 import time
+from radical.entk import Task
 from deepdrive import TaskManager
 
 
-class CVAE(TaskManager):
-    def __init__(self, num_ml, cpu_reqs, gpu_reqs):
+class CVAETaskManager(TaskManager):
+    def __init__(self, num_ml, cpu_reqs={}, gpu_reqs={}, cwd=os.getcwd()):
         """
         Parameters
         ----------
@@ -17,11 +18,13 @@ class CVAE(TaskManager):
         gpu_reqs : dict
             contains gpu hardware requirments for task
 
+        cwd : str
+            path from root to /DeepDriveMD directory
+
         """
-        super().__init__(cpu_reqs, gpu_reqs)
+        super().__init__(cpu_reqs, gpu_reqs, cwd)
 
         self.num_ml = num_ml
-        self.cwd = os.getcwd()
 
 
     def _task(self, pipeline_id, model_id, time_stamp):
@@ -37,30 +40,22 @@ class CVAE(TaskManager):
 
         task = Task()
 
-        # Specify modules for python and cuda, activate conda env.
+        self.load_environment(task)
+        self.set_python_executable(task)
+        self.assign_hardware(task)
+
         # Create output directory for generated files.
-        task.pre_exec ['module load python/3.7.0-anaconda3-5.3.0',
-                       'module load cuda/9.1.85',
-                       '. /sw/summit/python/3.7/anaconda3/5.3.0/etc/profile.d/conda.sh',
-                       f'conda activate {self.cwd}/conda-env/',
-                       f'mkdir -p {cvae_dir}']
+        task.pre_exec.extend([f'mkdir -p {cvae_dir}'])
 
-        # Specify python ML task
-        task.executable = [f'{self.cwd}/conda-env/bin/python']
-        task.arguments = [f'{self.cwd}/examples/cvae_dbscan/scripts/cvae.py']
-
-        # Arguments for ML task
-        task.arguments.extend(['--input', cm_data_path,
-                               '--out', cvae_dir,
-                               '--model_id', f'{model_id}',
-                               '--epochs', f'{epochs}',
-                               '--batch_size', f'{batch_size}',
-                               '--latent_dim', f'{latent_dim}'])
+        # Specify python ML task with arguments
+        task.arguments = [f'{self.cwd}/examples/cvae_dbscan/scripts/cvae.py',
+                          '--input', cm_data_path,
+                          '--out', cvae_dir,
+                          '--model_id', f'{model_id}',
+                          '--epochs', f'{epochs}',
+                          '--batch_size', f'{batch_size}',
+                          '--latent_dim', f'{latent_dim}']
         
-        # Specify hardware requirements
-        task.cpu_reqs = self.cpu_reqs
-        task.gpu_reqs = self.gpu_reqs
-
         return task
 
 
@@ -74,4 +69,3 @@ class CVAE(TaskManager):
         # TODO: incorporate or remove timestamp
         time_stamp = int(time.time())
         return {self._task(pipeline_id, i, time_stamp) for i in range(self.num_ml)}
-            
