@@ -4,10 +4,10 @@ import click
 import shutil
 from deepdrive import DeepDriveMD
 from deepdrive.utils.validators import validate_path
-from examples.cvae_dbscan.md import MDTaskManager
-from examples.cvae_dbscan.preprocess import ContactMatrixTaskManager
-from examples.cvae_dbscan.ml import CVAETaskManager
-from examples.cvae_dbscan.outlier import OPTICSTaskManager
+from examples.cvae_dbscan.taskmanagers.md import MDTaskManager
+from examples.cvae_dbscan.taskmanagers.preprocess import ContactMatrixTaskManager
+from examples.cvae_dbscan.taskmanagers.ml import CVAETaskManager
+from examples.cvae_dbscan.taskmanagers.outlier import OPTICSTaskManager
 
 
 @click.command()
