@@ -1,14 +1,37 @@
+import os
+import sys
+import click
+import shutil
 from deepdrive import DeepDriveMD
+from deepdrive.utils.validators import validate_path
 from examples.cvae_dbscan.md import MDTaskManager
 from examples.cvae_dbscan.preprocess import ContactMatrixTaskManager
 from examples.cvae_dbscan.ml import CVAETaskManager
 from examples.cvae_dbscan.outlier import OPTICSTaskManager
 
-import sys
-sys.stderr = open('./err.txt', 'w')
 
+@click.command()
+@click.option('-i', '--pdb_path', required=True,
+              callback=validate_path,
+              help='Path to initial pdb file')
 
-if __name__ == '__main__':
+def main(pdb_path):
+    # Create directory structure to store pipeline data
+    data_dir = os.path.join(os.getcwd(), 'data')
+    for dir_name in ['md', 'preproc', 'ml', 'outlier', 'shared']:
+        pipeline_dir = os.path.join(data_dir, dir_name, 'pipeline-0')
+        if not os.path.exists(pipeline_dir):
+            os.makedirs(pipeline_dir)
+        else:
+            raise Exception(f'data directory already exists. {pipeline_dir}')
+
+    shared_pdb_dir = os.path.join(data_dir, 'shared', 'pipeline-0', 'pdb')
+    os.makedirs(shared_pdb_dir)
+
+    # Make 10 copies of pdb_path in shared directory for initial starting set
+    for i in range(10):
+        shutil.copyfile(src=pdb_path,
+                        dst=os.path.join(shared_pdb_dir, f'input-{i}.pdb'))
 
     # Create a dictionary to describe four mandatory keys:
     # resource, walltime, cores and project.
@@ -90,11 +113,17 @@ if __name__ == '__main__':
     outlier_algs = [OPTICSTaskManager(**outlier_kwargs)]
 
     # Initialize DeepDriveMD object to manage pipeline.
-    cvae_dbscan_dd = DeepDriveMD(md_sims=md_sims,
+    cvae_optics_dd = DeepDriveMD(md_sims=md_sims,
                                  preprocs=preprocs,
                                  ml_algs=ml_algs,
                                  outlier_algs=outlier_algs,
                                  resources=resources)
 
     # Start running program on Summit.
-    cvae_dbscan_dd.run()
+    cvae_optics_dd.run()
+
+if __name__ == '__main__':
+    # Reroute error and standard output
+    sys.stderr = open('./err.log.txt', 'w')
+    sys.stdout = open('./out.log.txt', 'w')
+    main()
