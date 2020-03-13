@@ -124,6 +124,6 @@ def main(pdb_path):
 
 if __name__ == '__main__':
     # Reroute error and standard output
-    sys.stderr = open('./err.log.txt', 'w')
-    sys.stdout = open('./out.log.txt', 'w')
+    sys.stderr = open('./stderr.log', 'w')
+    sys.stdout = open('./stdout.log', 'w')
     main()
