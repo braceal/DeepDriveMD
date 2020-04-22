@@ -7,7 +7,7 @@ from deepdrive import TaskManager
 
 class MDTaskManager(TaskManager):
     def __init__(self, num_sims, sim_len, initial_sim_len,
-                 cpu_reqs={}, gpu_reqs={}, cwd=os.getcwd()):
+                 cpu_reqs={}, gpu_reqs={}, prefix=os.getcwd()):
         """
         Parameters
         ----------
@@ -26,11 +26,11 @@ class MDTaskManager(TaskManager):
         gpu_reqs : dict
             contains gpu hardware requirments for task
 
-        cwd : str
+        prefix : str
             path from root to /DeepDriveMD directory
 
         """
-        super().__init__(cpu_reqs, gpu_reqs, cwd)
+        super().__init__(cpu_reqs, gpu_reqs, prefix)
 
         self.num_sims = num_sims
         self.sim_len = sim_len
@@ -51,7 +51,7 @@ class MDTaskManager(TaskManager):
                               f'cp {incomming_pbds[sim_num]} {pdb_file}'])
 
         # Specify python MD task with arguments
-        task.arguments = [f'{self.cwd}/examples/cvae_dbscan/scripts/md.py',
+        task.arguments = [f'{self.prefix}/examples/cvae_dbscan/scripts/md.py',
                           '--pdb', pdb_file,
                           '--out', md_dir,
                           '--sim_id', str(sim_num),
@@ -67,8 +67,8 @@ class MDTaskManager(TaskManager):
 
         """
 
-        md_dir = f'{self.cwd}/data/md/pipeline-{pipeline_id}'
-        shared_dir = f'{self.cwd}/data/shared/pipeline-{pipeline_id}/pdb'
+        md_dir = f'{self.prefix}/data/md/pipeline-{pipeline_id}'
+        shared_dir = f'{self.prefix}/data/shared/pipeline-{pipeline_id}/pdb'
         incomming_pbds = glob.glob(os.path.join(shared_dir, '*.pdb'))
 
         if not incomming_pbds:

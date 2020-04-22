@@ -4,7 +4,7 @@ from deepdrive import TaskManager
 
 
 class OPTICSTaskManager(TaskManager):
-    def __init__(self, cpu_reqs={}, gpu_reqs={}, cwd=os.getcwd()):
+    def __init__(self, cpu_reqs={}, gpu_reqs={}, prefix=os.getcwd()):
         """
         Parameters
         ----------
@@ -14,11 +14,11 @@ class OPTICSTaskManager(TaskManager):
         gpu_reqs : dict
             contains gpu hardware requirments for task
 
-        cwd : str
+        prefix : str
             path from root to /DeepDriveMD directory
 
         """
-        super().__init__(cpu_reqs, gpu_reqs, cwd)
+        super().__init__(cpu_reqs, gpu_reqs, prefix)
 
     def tasks(self, pipeline_id):
         """
@@ -27,11 +27,11 @@ class OPTICSTaskManager(TaskManager):
         set of tasks to be added to the outlier stage.
 
         """
-        md_dir = f'{self.cwd}/data/md/pipeline-{pipeline_id}'
-        cvae_dir = f'{self.cwd}/data/ml/pipeline-{pipeline_id}'
-        shared_path = f'{self.cwd}/data/shared/pipeline-{pipeline_id + 1}/pdb'
-        outlier_dir = f'{self.cwd}/data/outlier/pipeline-{pipeline_id}'
-        cm_data_path = f'{self.cwd}/data/preproc/pipeline-{pipeline_id}/cvae-input.h5'
+        md_dir = f'{self.prefix}/data/md/pipeline-{pipeline_id}'
+        cvae_dir = f'{self.prefix}/data/ml/pipeline-{pipeline_id}'
+        shared_path = f'{self.prefix}/data/shared/pipeline-{pipeline_id + 1}/pdb'
+        outlier_dir = f'{self.prefix}/data/outlier/pipeline-{pipeline_id}'
+        cm_data_path = f'{self.prefix}/data/preproc/pipeline-{pipeline_id}/cvae-input.h5'
 
         task = Task()
         self.load_environment(task)
@@ -48,7 +48,7 @@ class OPTICSTaskManager(TaskManager):
             task.pre_exec.append(f'touch {outlier_dir}/eps-{pipeline_id}.json')
 
         # Specify python outlier detection task with arguments
-        task.arguments = [f'{self.cwd}/examples/cvae_dbscan/scripts/dbscan.py',
+        task.arguments = [f'{self.prefix}/examples/cvae_dbscan/scripts/dbscan.py',
                           '--sim_path', md_dir,
                           '--shared_path', shared_path,
                           '--cm_path', cm_data_path,

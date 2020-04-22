@@ -4,7 +4,7 @@ from deepdrive import TaskManager
 
 
 class ContactMatrixTaskManager(TaskManager):
-    def __init__(self, cpu_reqs={}, gpu_reqs={}, cwd=os.getcwd()):
+    def __init__(self, cpu_reqs={}, gpu_reqs={}, prefix=os.getcwd()):
         """
         Parameters
         ----------
@@ -14,13 +14,13 @@ class ContactMatrixTaskManager(TaskManager):
         gpu_reqs : dict
             contains gpu hardware requirments for task
 
-        cwd : str
+        prefix : str
             path from root to /DeepDriveMD directory
 
         Note: both cpu_reqs, gpu_reqs are empty.
 
         """
-        super().__init__(cpu_reqs, gpu_reqs, cwd)
+        super().__init__(cpu_reqs, gpu_reqs, prefix)
 
     def tasks(self, pipeline_id):
         """
@@ -29,8 +29,8 @@ class ContactMatrixTaskManager(TaskManager):
         Set of tasks to be added to the preprocessing stage.
 
         """
-        md_dir = f'{self.cwd}/data/md/pipeline-{pipeline_id}'
-        preproc_dir = f'{self.cwd}/data/preproc/pipeline-{pipeline_id}'
+        md_dir = f'{self.prefix}/data/md/pipeline-{pipeline_id}'
+        preproc_dir = f'{self.prefix}/data/preproc/pipeline-{pipeline_id}'
         
         task = Task()
 
@@ -42,7 +42,7 @@ class ContactMatrixTaskManager(TaskManager):
         task.pre_exec.extend([f'mkdir -p {preproc_dir}'])
 
         # Specify python preprocessing task with arguments
-        task.arguments = [f'{self.cwd}/examples/cvae_dbscan/scripts/contact_map.py',
+        task.arguments = [f'{self.prefix}/examples/cvae_dbscan/scripts/contact_map.py',
                           '--sim_path', md_dir,
                           '--out', preproc_dir]
 

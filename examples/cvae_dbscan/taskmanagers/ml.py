@@ -5,7 +5,7 @@ from deepdrive import TaskManager
 
 
 class CVAETaskManager(TaskManager):
-    def __init__(self, num_ml, cpu_reqs={}, gpu_reqs={}, cwd=os.getcwd()):
+    def __init__(self, num_ml, cpu_reqs={}, gpu_reqs={}, prefix=os.getcwd()):
         """
         Parameters
         ----------
@@ -18,11 +18,11 @@ class CVAETaskManager(TaskManager):
         gpu_reqs : dict
             contains gpu hardware requirments for task
 
-        cwd : str
+        prefix : str
             path from root to /DeepDriveMD directory
 
         """
-        super().__init__(cpu_reqs, gpu_reqs, cwd)
+        super().__init__(cpu_reqs, gpu_reqs, prefix)
 
         self.num_ml = num_ml
 
@@ -35,8 +35,8 @@ class CVAETaskManager(TaskManager):
         epochs = 100
         batch_size = 512
 
-        cvae_dir = f'{self.cwd}/data/ml/pipeline-{pipeline_id}'
-        cm_data_path = f'{self.cwd}/data/preproc/pipeline-{pipeline_id}/cvae-input.h5'
+        cvae_dir = f'{self.prefix}/data/ml/pipeline-{pipeline_id}'
+        cm_data_path = f'{self.prefix}/data/preproc/pipeline-{pipeline_id}/cvae-input.h5'
 
         task = Task()
 
@@ -48,7 +48,7 @@ class CVAETaskManager(TaskManager):
         task.pre_exec.extend([f'mkdir -p {cvae_dir}'])
 
         # Specify python ML task with arguments
-        task.arguments = [f'{self.cwd}/examples/cvae_dbscan/scripts/cvae.py',
+        task.arguments = [f'{self.prefix}/examples/cvae_dbscan/scripts/cvae.py',
                           '--input', cm_data_path,
                           '--out', cvae_dir,
                           '--model_id', f'{model_id}',

@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
 class TaskManager(metaclass=ABCMeta):
-    def __init__(self, cpu_reqs, gpu_reqs, cwd):
+    def __init__(self, cpu_reqs, gpu_reqs, prefix):
         """
         Parameters
         ----------
@@ -11,13 +11,13 @@ class TaskManager(metaclass=ABCMeta):
         gpu_reqs : dict
             contains gpu hardware requirments for task
 
-        cwd : str
+        prefix : str
             path from root to /DeepDriveMD directory
 
         """
         self.cpu_reqs = cpu_reqs
         self.gpu_reqs = gpu_reqs
-        self.cwd = cwd
+        self.prefix = prefix
 
     def assign_hardware(self, task):
         """
@@ -45,7 +45,7 @@ class TaskManager(metaclass=ABCMeta):
                               'module load hdf5/1.10.3',
                               'module load cuda/10.1.168',
                               '. /sw/summit/python/3.6/anaconda3/5.3.0/etc/profile.d/conda.sh',
-                              f'conda activate {self.cwd}/conda-env/'])
+                              f'conda activate {self.prefix}/conda-env/'])
 
     def set_python_executable(self, task):
         """
@@ -55,7 +55,7 @@ class TaskManager(metaclass=ABCMeta):
         ----------
         task : radical.entk.Task
         """
-        task.executable = [f'{self.cwd}/conda-env/bin/python']
+        task.executable = [f'{self.prefix}/conda-env/bin/python']
 
     @abstractmethod
     def tasks(self, pipeline_id):
