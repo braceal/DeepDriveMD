@@ -54,20 +54,12 @@ class DeepDriveMD:
             Name of outlier detection stage
 
         """
-
-        # TODO: Move outside of class? Maybe put in __init__.py
-        #       or bash setup script
-        # Set default verbosity
-        if os.environ.get('RADICAL_ENTK_VERBOSE') is None:
-            os.environ['RADICAL_ENTK_REPORT'] = 'True'
+        # Checks environment variables are set
+        self._validate_environment()
 
         # Number of iterations through the pipeline
         self.current_iter = 0
         self.max_iter = max_iter
-
-        # Initialize pipeline
-        self.__pipeline = Pipeline()
-        self.__pipeline.name = pipeline_name
 
         # Neatly stores stage name and taskmanagers
         StageData = namedtuple('StageData', ['name', 'taskmanagers'])
@@ -78,17 +70,23 @@ class DeepDriveMD:
                        'ml': StageData(ml_stage_name, ml_algs),
                        'outlier': StageData(outlier_stage_name, outlier_algs)}
 
+        # Initialize pipeline
+        self.__pipeline = Pipeline()
+        self.__pipeline.name = pipeline_name
+
         # Sets pipeline stages
         self._pipeline()
 
         # Create Application Manager
         self.appman = AppManager(hostname=os.environ.get('RMQ_HOSTNAME'),
                                  port=int(os.environ.get('RMQ_PORT')))
+
+        # Assign hardware resources to application
         self.appman.resource_desc = resources
 
-        # Assign the workflow as a list of Pipelines to the Application Manager. In
+        # Assign the workflow as a set of Pipelines to the Application Manager. In
         # this way, all the pipelines in the set will execute concurrently.
-        self.appman.workflow = set(self.__pipeline)
+        self.appman.workflow = {self.__pipeline}
 
     def run(self):
         """
@@ -99,6 +97,18 @@ class DeepDriveMD:
         """
         self.appman.run()
 
+    def _validate_environment(self):
+        if not os.environ.get('RADICAL_ENTK_VERBOSE'):
+            os.environ['RADICAL_ENTK_REPORT'] = 'True'
+
+        # All envars must be set prior
+        envars = ['RMQ_HOSTNAME', 'RMQ_PORT', 'RADICAL_PILOT_DBURL',
+                  'RADICAL_PILOT_PROFILE', 'RADICAL_ENTK_PROFILE']
+
+        for envar in envars:
+            if not os.environ.get(envar):
+                raise Exception(f'{envar} environment variable not set')
+        
     def _generate_stage(self, stage_type):
         """
         Parameters
@@ -111,6 +121,11 @@ class DeepDriveMD:
         for taskman in self.stages[stage_type].taskmanagers:
             stage.add_tasks(set(taskman.tasks(self.current_iter)))
         return stage
+
+    def _condition(self):
+        if self.current_iter < self.max_iter:
+            self._pipeline()
+        print('Done')
 
     def _pipeline(self):
         """
@@ -130,12 +145,8 @@ class DeepDriveMD:
         last_stage = self._generate_stage('outlier')
 
         # Set post execution for last stage
-        last_stage.post_exec = {
-            'condition': lambda: self.current_iter < self.max_iter,
-            'on_true': self._pipeline,
-            'on_false': lambda: print('Done')
-        }
-
-        self.__pipeline.add_stages(last_stage)
+        last_stage.post_exec = self._condition
 
         self.current_iter += 1
+
+        self.__pipeline.add_stages(last_stage)

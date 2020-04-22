@@ -1,15 +1,6 @@
 import os
 import click
 
-
-def validate_path(ctx, param, value):
-    """Add abspath to non-None file."""
-    if value:
-        path = os.path.abspath(value)
-        if not os.path.exists(path):
-            raise click.BadParameter(f'path does not exist {path}')
-        return path
-
 def validate_positive(ctx, param, value):
     """Check that param value is greater than 0."""
     if value < 0:

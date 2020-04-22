@@ -5,16 +5,15 @@ from glob import glob
 from contextlib import ExitStack
 from molecules.utils import open_h5
 from deepdrive.preproc import cm_to_cvae
-from deepdrive.utils.validators import validate_path
 
 
 @click.command()
 @click.option('-i', '--sim_path', required=True,
-              callback=validate_path,
+              type=click.Path(exists=True),
               help='OpenMM simulation path containing output-cm-*.h5 files')
 
 @click.option('-o', '--out', required=True,
-              callback=validate_path,
+              type=click.Path(exists=True),
               help='2D contact map h5 file')
 
 def main(sim_path, out):

@@ -12,7 +12,8 @@ import molecules.sim as sim
 def openmm_simulate_amber_fs_pep(pdb_file, top_file=None, checkpnt_fname='checkpnt.chk', 
                                  checkpnt=None, GPU_index=0,
                                  output_traj='output.dcd', output_log='output.log', output_cm=None,
-                                 report_time=10*u.picoseconds, sim_time=10*u.nanoseconds):
+                                 report_time=10*u.picoseconds,sim_time=10*u.nanoseconds, 
+                                 platform='CUDA'):
     """
     Start and run an OpenMM NVT simulation with Langevin integrator at 2 fs 
     time step and 300 K. The cutoff distance for nonbonded interactions were 
@@ -46,6 +47,10 @@ def openmm_simulate_amber_fs_pep(pdb_file, top_file=None, checkpnt_fname='checkp
 
     sim_time : 10 ns
         The timespan of the simulation trajectory
+
+    platform : str
+        Name of platform. Options: 'CUDA', 'OpenCL', or 'CPU'
+
     """
 
     if top_file: 
@@ -63,16 +68,17 @@ def openmm_simulate_amber_fs_pep(pdb_file, top_file=None, checkpnt_fname='checkp
     integrator = omm.LangevinIntegrator(300*u.kelvin, 91.0/u.picosecond, dt)
     integrator.setConstraintTolerance(0.00001)
 
-    try:
+    # Select platform
+    if platform is 'CUDA':
         platform = omm.Platform_getPlatformByName('CUDA')
         properties = {'DeviceIndex': str(GPU_index), 'CudaPrecision': 'mixed'}
-    except Exception:
-        try:
-            platform = omm.Platform_getPlatformByName('OpenCL')
-            properties = {'DeviceIndex': str(GPU_index)}
-        except Exception:
-            # Run with CPU (for dev testing)
-            platform, properties = None, None
+    elif platform is 'OpenCL':
+        platform = omm.Platform_getPlatformByName('OpenCL')
+        properties = {'DeviceIndex': str(GPU_index)}
+    elif platform is 'CPU':
+        platform, properties = None, None
+    else:
+        raise ValueError(f'Invalid platform name: {platform}')
 
     simulation = app.Simulation(pdb.topology, system, integrator, platform, properties)
 
