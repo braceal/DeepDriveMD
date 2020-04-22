@@ -61,10 +61,6 @@ class DeepDriveMD:
         self.current_iter = 0
         self.max_iter = max_iter
 
-        # Initialize pipeline
-        self.__pipeline = Pipeline()
-        self.__pipeline.name = pipeline_name
-
         # Neatly stores stage name and taskmanagers
         StageData = namedtuple('StageData', ['name', 'taskmanagers'])
 
@@ -73,6 +69,10 @@ class DeepDriveMD:
                        'preprocess': StageData(pre_stage_name, preprocs),
                        'ml': StageData(ml_stage_name, ml_algs),
                        'outlier': StageData(outlier_stage_name, outlier_algs)}
+
+        # Initialize pipeline
+        self.__pipeline = Pipeline()
+        self.__pipeline.name = pipeline_name
 
         # Sets pipeline stages
         self._pipeline()
@@ -126,7 +126,6 @@ class DeepDriveMD:
         if self.current_iter < self.max_iter:
             self._pipeline()
         print('Done')
-
 
     def _pipeline(self):
         """
