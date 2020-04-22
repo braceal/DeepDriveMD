@@ -12,8 +12,7 @@ from molecules.ml.unsupervised import (VAE, EncoderConvolution2D,
                                        EncoderHyperparams,
                                        DecoderHyperparams)
 from deepdrive.utils import get_id
-from deepdrive.utils.validators import (validate_path, 
-                                        validate_positive,
+from deepdrive.utils.validators import (validate_positive,
                                         validate_between_zero_and_one)
 
 
@@ -96,23 +95,23 @@ def write_rewarded_pdbs(rewarded_inds, sim_path, shared_path):
 
 @click.command()
 @click.option('-i', '--sim_path', required=True,
-              callback=validate_path,
+              type=click.Path(exists=True),
               help='OpenMM simulation path containing *.dcd and *.pdb files')
 
 @click.option('-s', '--shared_path', required=True,
-              callback=validate_path,
+              type=click.Path(exists=True),
               help='Path to folder shared between outlier and MD stages.')
 
 @click.option('-d', '--cm_path', required=True,
-              callback=validate_path,
+              type=click.Path(exists=True),
               help='Preprocessed cvae-input h5 file path')
 
 @click.option('-c', '--cvae_path', required=True,
-              callback=validate_path,
+              type=click.Path(exists=True),
               help='CVAE model directory path')
 
 # @click.option('-e', '--eps_path', required=True,
-#               callback=validate_path,
+#               type=click.Path(exists=True),
 #               help='Path to eps record for DBSCAN. Empty files are valid.')
 
 # @click.option('-E', '--eps', default=0.2, type=float,

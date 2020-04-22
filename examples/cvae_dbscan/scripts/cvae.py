@@ -9,16 +9,16 @@ from molecules.ml.unsupervised import (VAE, EncoderConvolution2D,
                                        DecoderHyperparams)
 from molecules.ml.unsupervised.callbacks import (EmbeddingCallback,
                                                 LossHistory)
-from deepdrive.utils.validators import validate_path, validate_positive
+from deepdrive.utils.validators import validate_positive
 
 
 @click.command()
 @click.option('-i', '--input', 'input_path', required=True,
-              callback=validate_path,
+              type=click.Path(exists=True),
               help='Path to file containing preprocessed contact matrix data')
 
 @click.option('-o', '--out', 'out_path', required=True,
-              callback=validate_path,
+              type=click.Path(exists=True),
               help='Output directory for model data')
 
 @click.option('-m', '--model_id', required=True,

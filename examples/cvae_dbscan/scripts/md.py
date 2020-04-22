@@ -2,25 +2,27 @@ import os
 import click
 import simtk.unit as u
 from deepdrive.md import openmm_simulate_amber_fs_pep
-from deepdrive.utils.validators import validate_path, validate_positive
+from deepdrive.utils.validators import validate_positive
 
 
 @click.command()
 @click.option('-p', '--pdb', 'pdb_path' required=True,
-              callback=validate_path, help='PDB file')
+              type=click.Path(exists=True),
+              help='PDB file')
 
 @click.option('-o', '--out', 'out_path', required=True,
-              callback=validate_path,
+              type=click.Path(exists=True),
               help='Output directory for MD simulation data')
 
 @click.option('-i', '--sim_id', required=True,
               help='Simulation ID for file naming')
 
 @click.option('-t', '--topol', default=None, 
-              callback=validate_path, help='Topology file')
+              type=click.Path(exists=True),
+              help='Topology file')
 
 @click.option('-c', '--chk', default=None,
-              callback=validate_path,
+              type=click.Path(exists=True),
               help='Checkpoint file to restart simulation')
 
 @click.option('-l', '--len', 'length', default=10, type=float,
