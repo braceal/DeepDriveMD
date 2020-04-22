@@ -3,7 +3,6 @@ import sys
 import click
 import shutil
 from deepdrive import DeepDriveMD
-from deepdrive.utils.validators import validate_path
 from examples.cvae_dbscan.taskmanagers.md import MDTaskManager
 from examples.cvae_dbscan.taskmanagers.preprocess import ContactMatrixTaskManager
 from examples.cvae_dbscan.taskmanagers.ml import CVAETaskManager
@@ -12,7 +11,7 @@ from examples.cvae_dbscan.taskmanagers.outlier import OPTICSTaskManager
 
 @click.command()
 @click.option('-i', '--pdb_path', required=True,
-              callback=validate_path,
+              type=click.Path(exists=True),
               help='Path to initial pdb file')
 
 def main(pdb_path):
