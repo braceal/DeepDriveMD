@@ -38,14 +38,13 @@ class OPTICSTaskManager(TaskManager):
         self.set_python_executable(task)
         self.assign_hardware(task)
 
-        # Create output directory for generated files.
-        task.pre_exec.extend([f'mkdir -p {outlier_dir}',
-                              f'mkdir -p {shared_path}'])
+        # Create output directories for generated files.
+        task.pre_exec.append(f'mkdir -p {outlier_dir} {shared_path}')
 
         # Initialize eps dictionary that is shared and updated over
         # each round of the pipeline
-        if pipeline_id == 0:
-            task.pre_exec.append(f'touch {outlier_dir}/eps-{pipeline_id}.json')
+        # if pipeline_id == 0:
+        #     task.pre_exec.append(f'touch {outlier_dir}/eps-{pipeline_id}.json')
 
         # Specify python outlier detection task with arguments
         task.arguments = [f'{self.prefix}/examples/cvae_dbscan/scripts/dbscan.py',
