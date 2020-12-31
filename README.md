@@ -1,6 +1,14 @@
 # DeepDriveMD
 Deep-Learning Driven Adaptive Molecular Simulations for Protein Folding
 
+---
+
+# Important!!
+This repository is out of date. Please see our latest version [here](https://github.com/DeepDriveMD/DeepDriveMD-pipeline) or refer to our [website](https://deepdrivemd.github.io/). Thank you!
+
+---
+
+
 Implementation of: https://arxiv.org/pdf/1909.07817.pdf
 
 Project location: https://github.com/braceal/DeepDriveMD.git
